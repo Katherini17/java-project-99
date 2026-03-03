@@ -22,4 +22,7 @@ test-report:
 clean:
 	@./gradlew clean
 
+check-updates:
+	./gradlew dependencyUpdates
+
 .PHONY: build
