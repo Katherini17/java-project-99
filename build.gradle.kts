@@ -4,6 +4,7 @@ plugins {
 	id("org.springframework.boot") version "4.0.3"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("com.github.ben-manes.versions") version "0.53.0"
+	id("org.sonarqube") version "7.2.3.7755"
 }
 
 group = "hexlet.code"
@@ -46,4 +47,11 @@ tasks.withType<Test> {
 
 application {
 	mainClass.set("hexlet.code.AppApplication")
+}
+
+sonar {
+	properties {
+		property("sonar.projectKey", "Katherini17_java-project-99")
+		property("sonar.organization", "katherini-17-projects")
+	}
 }

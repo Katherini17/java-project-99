@@ -23,6 +23,6 @@ clean:
 	@./gradlew clean
 
 check-updates:
-	./gradlew dependencyUpdates
+	@./gradlew dependencyUpdates
 
 .PHONY: build
