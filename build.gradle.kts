@@ -1,6 +1,7 @@
 plugins {
 	application
 	checkstyle
+	jacoco
 	id("org.springframework.boot") version "4.0.3"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("com.github.ben-manes.versions") version "0.53.0"
@@ -53,5 +54,22 @@ sonar {
 	properties {
 		property("sonar.projectKey", "Katherini17_java-project-99")
 		property("sonar.organization", "katherini-17-projects")
+	}
+}
+
+tasks.test {
+	finalizedBy(tasks.jacocoTestReport)
+}
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+}
+
+jacoco {
+	toolVersion = "0.8.14"
+}
+
+tasks.jacocoTestReport {
+	reports {
+		xml.required = true
 	}
 }
