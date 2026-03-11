@@ -6,6 +6,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.1.7"
 	id("com.github.ben-manes.versions") version "0.53.0"
 	id("org.sonarqube") version "7.2.3.7755"
+	id("io.freefair.lombok") version "9.2.0"
 }
 
 group = "hexlet.code"
@@ -29,17 +30,20 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql")
-	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+	implementation("org.mapstruct:mapstruct:1.6.3")
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 }
 
 tasks.withType<Test> {
@@ -62,14 +66,11 @@ tasks.test {
 }
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+	}
 }
 
 jacoco {
 	toolVersion = "0.8.14"
-}
-
-tasks.jacocoTestReport {
-	reports {
-		xml.required = true
-	}
 }
