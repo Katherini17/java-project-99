@@ -1,6 +1,10 @@
 spring:
   application:
     name: app
+
+  profiles:
+    active: development
+
   jpa:
     show-sql: true
     hibernate:
@@ -9,6 +13,9 @@ spring:
       hibernate:
         jdbc.batch_size: 10
         format_sql: true
+        use_sql_comments: true
 
-  profiles:
-    active: development
+
+logging:
+  level:
+    root: INFO

@@ -1,10 +1,15 @@
 spring:
   datasource:
-    url: jdbc:${DATABASE_URL}
+    url: ${JDBC_DATABASE_URL}
 
   jpa:
-    database-platform: org.hibernate.dialect.PostreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: false
 
+
+logging:
+  level:
+    org.hibernate: ERROR
+    org.springframework.orm.jpa: WARN
