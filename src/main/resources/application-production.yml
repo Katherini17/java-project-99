@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:${DATABASE_URL}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
