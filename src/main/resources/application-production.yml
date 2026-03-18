@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL}
+    url: ${SPRING_DATASOURCE_URL}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect

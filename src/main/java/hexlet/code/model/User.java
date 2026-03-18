@@ -46,4 +46,3 @@ public class User implements BaseEntity {
     @LastModifiedDate
     private Instant updatedAt;
 }
-
