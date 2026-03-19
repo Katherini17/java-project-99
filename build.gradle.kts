@@ -38,12 +38,22 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	implementation("org.mapstruct:mapstruct:1.6.3")
 	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+
+	constraints {
+		implementation("tools.jackson.core:jackson-core:3.1.0") {
+			because("fixes security vulnerabilities GHSA-72hv-8253-57qq and CVE-2026-29062")
+		}
+		implementation("tools.jackson.core:jackson-databind:3.1.0") {
+			because("aligns versions with jackson-core to resolve security vulnerabilities")
+		}
+	}
 }
 
 tasks.withType<Test> {

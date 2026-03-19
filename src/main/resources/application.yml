@@ -5,6 +5,9 @@ spring:
   profiles:
     active: development
 
+  jackson:
+    default-property-inclusion: non-null
+
   jpa:
     show-sql: true
     hibernate:
