@@ -22,3 +22,9 @@ spring:
 logging:
   level:
     root: INFO
+
+
+config:
+  admin:
+    email: hexlet@example.com
+    password: qwerty
