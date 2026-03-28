@@ -21,3 +21,4 @@ frontend/dist/
 .env.local
 application-local.properties
 application-local.yml
+src/main/resources/certs/
