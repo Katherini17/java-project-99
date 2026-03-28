@@ -1,23 +1,25 @@
 package hexlet.code.util;
 
+import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.model.User;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.instancio.Instancio;
 import org.instancio.Model;
 import org.instancio.Select;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Getter
 @Component
+@RequiredArgsConstructor
 public class ModelGenerator {
 
     private Model<User> userModel;
+    private Model<UserCreateDTO> userCreateDTOModel;
 
-    @Autowired
-    private Faker faker;
+    private final Faker faker;
 
     @PostConstruct
     public void init() {
@@ -29,6 +31,13 @@ public class ModelGenerator {
                 .supply(Select.field(User::getLastName), () -> faker.name().lastName())
                 .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
                 .supply(Select.field(User::getPassword), () -> faker.credentials().password(3, 10))
+                .toModel();
+
+        userCreateDTOModel = Instancio.of(UserCreateDTO.class)
+                .supply(Select.field(UserCreateDTO::firstName), () -> faker.name().firstName())
+                .supply(Select.field(UserCreateDTO::lastName), () -> faker.name().lastName())
+                .supply(Select.field(UserCreateDTO::email), () -> faker.internet().emailAddress())
+                .supply(Select.field(UserCreateDTO::password), () -> faker.credentials().password(3, 10))
                 .toModel();
     }
 }
