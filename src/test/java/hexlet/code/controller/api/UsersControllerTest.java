@@ -1,27 +1,28 @@
 package hexlet.code.controller.api;
 
-import hexlet.code.config.TestConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserUpdateDTO;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.util.ModelGenerator;
 import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -31,7 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(TestConfig.class)
 class UsersControllerTest {
 
     @Autowired
@@ -59,7 +59,8 @@ class UsersControllerTest {
 
     @Test
     void testIndex() throws Exception {
-        var result = mockMvc.perform(get("/api/users"))
+        var result = mockMvc.perform(get("/api/users")
+                    .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -69,7 +70,8 @@ class UsersControllerTest {
 
     @Test
     void testShow() throws Exception {
-        var result = mockMvc.perform(get("/api/users/{id}", testUser.getId()))
+        var result = mockMvc.perform(get("/api/users/{id}", testUser.getId())
+                        .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -85,11 +87,12 @@ class UsersControllerTest {
     void testCreate() throws Exception {
         User data = Instancio.of(modelGenerator.getUserModel()).create();
 
-        var dto = generateCreateDTO(data);
+        UserCreateDTO dto = toCreateDTO(data);
 
         mockMvc.perform(post("/api/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(dto)))
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
         User createdUser = userRepository.findByEmail(data.getEmail()).orElse(null);
@@ -105,6 +108,7 @@ class UsersControllerTest {
         dto.setFirstName(JsonNullable.of("newName"));
 
         mockMvc.perform(put("/api/users/{id}", testUser.getId())
+                        .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -117,7 +121,8 @@ class UsersControllerTest {
 
     @Test
     void testDestroy() throws Exception {
-        mockMvc.perform(delete("/api/users/{id}", testUser.getId()))
+        mockMvc.perform(delete("/api/users/{id}", testUser.getId())
+                        .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
                 .andExpect(status().isNoContent());
 
         assertThat(userRepository.existsById(testUser.getId())).isFalse();
@@ -127,12 +132,12 @@ class UsersControllerTest {
 
     @Test
     void testCreateWithInvalidData() throws Exception {
-        User data = Instancio.of(modelGenerator.getUserModel()).create();
-
-        var dto = generateCreateDTO(data);
-        dto.setEmail("Invalid email");
+        var dto = Instancio.of(modelGenerator.getUserCreateDTOModel())
+                .set(Select.field(UserCreateDTO::email), "Invalid Email")
+                .create();
 
         mockMvc.perform(post("/api/users")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -144,6 +149,7 @@ class UsersControllerTest {
         dto.setPassword(JsonNullable.of("12"));
 
         mockMvc.perform(put("/api/users/{id}", testUser.getId())
+                        .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -151,17 +157,18 @@ class UsersControllerTest {
 
     @Test
     void testShowNotFound() throws Exception {
-        mockMvc.perform(get("/api/users/{id}", 111111))
+        mockMvc.perform(get("/api/users/{id}", 111111)
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isNotFound());
     }
 
-    private UserCreateDTO generateCreateDTO(User data) {
-        var dto = new UserCreateDTO();
-        dto.setEmail(data.getEmail());
-        dto.setFirstName(data.getFirstName());
-        dto.setLastName(data.getLastName());
-        dto.setPassword(data.getPassword());
-        return dto;
+    private UserCreateDTO toCreateDTO(User data) {
+        return new UserCreateDTO(
+                data.getFirstName(),
+                data.getLastName(),
+                data.getEmail(),
+                data.getPassword()
+        );
     }
 
 }
