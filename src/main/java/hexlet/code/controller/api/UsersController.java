@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,7 @@ public class UsersController {
     private final UserService userService;
 
     @GetMapping(path = "")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> index(
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit
@@ -47,17 +49,20 @@ public class UsersController {
     }
 
     @GetMapping(path = "/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")
     public UserDTO show(@PathVariable Long id) {
         return userService.findById(id);
     }
 
     @PostMapping(path = "")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public UserDTO create(@RequestBody @Valid UserCreateDTO userData) {
         return userService.create(userData);
     }
 
     @PutMapping(path = "/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")
     public UserDTO update(
             @RequestBody @Valid UserUpdateDTO userData,
             @PathVariable Long id
@@ -67,6 +72,7 @@ public class UsersController {
 
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")
     public void destroy(@PathVariable Long id) {
         userService.delete(id);
     }
