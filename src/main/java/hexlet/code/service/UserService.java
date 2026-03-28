@@ -5,14 +5,18 @@ import hexlet.code.dto.UserDTO;
 import hexlet.code.dto.UserUpdateDTO;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.UserMapper;
+import hexlet.code.model.Role;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +37,9 @@ public class UserService {
     @Transactional
     public UserDTO create(UserCreateDTO userData) {
         User user = userMapper.map(userData);
-        user.setPassword(passwordEncoder.encode(userData.getPassword()));
+        user.setRole(Role.USER);
+        user.setPassword(passwordEncoder.encode(userData.password()));
+
         return userMapper.map(userRepository.save(user));
     }
 
@@ -48,7 +54,11 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE.formatted(id)));
         userMapper.update(userData, user);
-        applyPasswordUpdate(userData, user);
+
+        Optional.ofNullable(userData.getPassword())
+                .filter(JsonNullable::isPresent)
+                .map(JsonNullable::get)
+                .ifPresent(pw -> user.setPassword(pw, passwordEncoder));
 
         return userMapper.map(userRepository.save(user));
     }
@@ -59,14 +69,6 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE.formatted(id)));
 
         userRepository.delete(user);
-    }
-
-    private void applyPasswordUpdate(UserUpdateDTO userData, User user) {
-        userData.getPassword().ifPresent(password -> {
-            if (password != null) {
-                user.setPassword(passwordEncoder.encode(password));
-            }
-        });
     }
 }
 
