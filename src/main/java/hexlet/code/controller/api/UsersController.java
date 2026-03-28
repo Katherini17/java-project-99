@@ -38,9 +38,11 @@ public class UsersController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> index(
             @RequestParam(defaultValue = "1") @Min(1) int page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int perPage,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "ASC") String order
     ) {
-        Page<UserDTO> resultPage = userService.getAll(page - 1, limit);
+        Page<UserDTO> resultPage = userService.getAll(page - 1, perPage, sort, order);
 
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(resultPage.getTotalElements()))

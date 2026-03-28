@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,10 @@ public class UserService {
 
     private static final String USER_NOT_FOUND_MESSAGE = "User with id %d not found";
 
-    public Page<UserDTO> getAll(int page, int limit) {
-        return userRepository.findAll(PageRequest.of(page, limit))
+    public Page<UserDTO> getAll(int page, int size, String sortField, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
+
+        return userRepository.findAll(PageRequest.of(page, size, sort))
                 .map(userMapper::map);
     }
 
