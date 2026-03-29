@@ -41,7 +41,7 @@ public class UserService {
     public UserDTO create(UserCreateDTO userData) {
         User user = userMapper.map(userData);
         user.setRole(Role.USER);
-        user.setPassword(passwordEncoder.encode(userData.password()));
+        user.setPassword(userData.password(), passwordEncoder);
 
         return userMapper.map(userRepository.save(user));
     }
