@@ -5,7 +5,7 @@ import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
-import hexlet.code.util.ModelGenerator;
+import hexlet.code.util.generator.UserGenerator;
 import org.instancio.Instancio;
 import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,13 +47,13 @@ class UsersControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private ModelGenerator modelGenerator;
+    private UserGenerator userGenerator;
 
     private User testUser;
 
     @BeforeEach
     void setUp() {
-        testUser = Instancio.of(modelGenerator.getUserModel()).create();
+        testUser = Instancio.of(userGenerator.getUserModel()).create();
         userRepository.save(testUser);
     }
 
@@ -85,7 +85,7 @@ class UsersControllerTest {
 
     @Test
     void testCreate() throws Exception {
-        User data = Instancio.of(modelGenerator.getUserModel()).create();
+        User data = Instancio.of(userGenerator.getUserModel()).create();
 
         UserCreateDTO dto = toCreateDTO(data);
 
@@ -132,7 +132,7 @@ class UsersControllerTest {
 
     @Test
     void testCreateWithInvalidData() throws Exception {
-        var dto = Instancio.of(modelGenerator.getUserCreateDTOModel())
+        var dto = Instancio.of(userGenerator.getUserCreateDTOModel())
                 .set(Select.field(UserCreateDTO::email), "Invalid Email")
                 .create();
 
