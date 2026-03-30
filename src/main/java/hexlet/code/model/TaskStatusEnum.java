@@ -15,8 +15,12 @@ public enum TaskStatusEnum {
         this.name = name;
     }
 
-    public String getSlug() { return slug; }
-    public String getName() { return name; }
+    public String getSlug() {
+        return slug;
+    }
 
+    public String getName() {
+        return name;
+    }
 
 }
