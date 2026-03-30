@@ -51,6 +51,9 @@ class UsersControllerTest {
 
     private User testUser;
 
+    private static final String BASE_URL = "/api/users";
+    private static final String ID_URL = "%s/{id}".formatted(BASE_URL);
+
     @BeforeEach
     void setUp() {
         testUser = Instancio.of(userGenerator.getUserModel()).create();
@@ -59,7 +62,7 @@ class UsersControllerTest {
 
     @Test
     void testIndex() throws Exception {
-        var result = mockMvc.perform(get("/api/users")
+        var result = mockMvc.perform(get(BASE_URL)
                     .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -70,7 +73,7 @@ class UsersControllerTest {
 
     @Test
     void testShow() throws Exception {
-        var result = mockMvc.perform(get("/api/users/{id}", testUser.getId())
+        var result = mockMvc.perform(get(ID_URL, testUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -89,7 +92,7 @@ class UsersControllerTest {
 
         UserCreateDTO dto = toCreateDTO(data);
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(BASE_URL)
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -107,7 +110,7 @@ class UsersControllerTest {
         var dto = new UserUpdateDTO();
         dto.setFirstName(JsonNullable.of("newName"));
 
-        mockMvc.perform(put("/api/users/{id}", testUser.getId())
+        mockMvc.perform(put(ID_URL, testUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -121,7 +124,7 @@ class UsersControllerTest {
 
     @Test
     void testDestroy() throws Exception {
-        mockMvc.perform(delete("/api/users/{id}", testUser.getId())
+        mockMvc.perform(delete(ID_URL, testUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
                 .andExpect(status().isNoContent());
 
@@ -129,14 +132,58 @@ class UsersControllerTest {
     }
 
 
+    @Test
+    void testIndexWithoutAdmin() throws Exception {
+        mockMvc.perform(get(BASE_URL).with(jwt()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testCreateWithoutAdmin() throws Exception {
+        UserCreateDTO dto = Instancio.of(userGenerator.getUserCreateDTOModel()).create();
+
+        mockMvc.perform(post(BASE_URL)
+                        .with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    void testUpdateOtherUser() throws Exception {
+        User otherUser = Instancio.of(userGenerator.getUserModel()).create();
+        userRepository.save(otherUser);
+
+        var dto = new UserUpdateDTO();
+        dto.setFirstName(JsonNullable.of("newName"));
+
+        mockMvc.perform(put(ID_URL, otherUser.getId())
+                        .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDestroyOtherUser() throws Exception {
+        User otherUser = Instancio.of(userGenerator.getUserModel()).create();
+        userRepository.save(otherUser);
+
+        mockMvc.perform(delete(ID_URL, otherUser.getId())
+                        .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.existsById(otherUser.getId())).isTrue();
+    }
 
     @Test
     void testCreateWithInvalidData() throws Exception {
         var dto = Instancio.of(userGenerator.getUserCreateDTOModel())
-                .set(Select.field(UserCreateDTO::email), "Invalid Email")
+                .set(Select.field(UserCreateDTO::password), "12")
                 .create();
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(BASE_URL)
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -144,11 +191,11 @@ class UsersControllerTest {
     }
 
     @Test
-    void testUpdateWithInvalidData() throws Exception {
+    void testUpdateWithInvalidEmail() throws Exception {
         var dto = new UserUpdateDTO();
-        dto.setPassword(JsonNullable.of("12"));
+        dto.setEmail(JsonNullable.of("Invalid email"));
 
-        mockMvc.perform(put("/api/users/{id}", testUser.getId())
+        mockMvc.perform(put(ID_URL, testUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -157,7 +204,7 @@ class UsersControllerTest {
 
     @Test
     void testShowNotFound() throws Exception {
-        mockMvc.perform(get("/api/users/{id}", 111111)
+        mockMvc.perform(get(ID_URL, 111111)
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isNotFound());
     }
