@@ -1,6 +1,6 @@
 package hexlet.code.dto.user;
 
-import hexlet.code.validator.EmailNullable;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +12,7 @@ public class UserUpdateDTO {
     private JsonNullable<String> firstName;
     private JsonNullable<String> lastName;
 
-    @EmailNullable
+    @Email
     private JsonNullable<String> email;
 
     @Size(min = 3)
