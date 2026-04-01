@@ -58,7 +58,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE.formatted(id)));
         userMapper.update(userData, user);
 
-        Optional.ofNullable(userData.getPassword())
+        Optional.ofNullable(userData.password())
                 .filter(JsonNullable::isPresent)
                 .map(JsonNullable::get)
                 .ifPresent(pw -> user.setPassword(pw, passwordEncoder));
