@@ -30,6 +30,7 @@ import java.util.List;
 public class TaskStatusesController {
 
     private final TaskStatusService taskStatusService;
+
     @GetMapping("")
     public ResponseEntity<List<TaskStatusDTO>> index() {
         List<TaskStatusDTO> taskStatuses = taskStatusService.getAll();
