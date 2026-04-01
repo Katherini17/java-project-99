@@ -1,7 +1,9 @@
 package hexlet.code.util.generator;
 
 import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
+import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
 import hexlet.code.model.TaskStatus;
+import hexlet.code.util.ModelUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,18 +18,21 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TaskStatusGenerator {
 
-    private Model<TaskStatus> taskStatusModel;
-    private Model<TaskStatusCreateDTO> taskStatusCreateDTOModel;
+    private Model<TaskStatus> model;
+    private Model<TaskStatusCreateDTO> createDTO;
+    private Model<TaskStatusUpdateDTO> updateDTO;
 
     private final Faker faker;
 
     @PostConstruct
     public void init() {
-        taskStatusModel = buildTaskStatusModel();
-        taskStatusCreateDTOModel = buildTaskStatusCreateDTOModel();
+        model = buildModel();
+        createDTO = buildCreateDTO();
+        updateDTO = ModelUtils.buildUpdateModel(TaskStatusUpdateDTO.class);
+
     }
 
-    private Model<TaskStatus> buildTaskStatusModel() {
+    private Model<TaskStatus> buildModel() {
         return Instancio.of(TaskStatus.class)
                 .ignore(Select.field(TaskStatus::getId))
                 .ignore(Select.field(TaskStatus::getCreatedAt))
@@ -36,7 +41,7 @@ public class TaskStatusGenerator {
                 .toModel();
     }
 
-    private Model<TaskStatusCreateDTO> buildTaskStatusCreateDTOModel() {
+    private Model<TaskStatusCreateDTO> buildCreateDTO() {
         return Instancio.of(TaskStatusCreateDTO.class)
                 .supply(Select.field(TaskStatusCreateDTO::name), () -> faker.lorem().word())
                 .supply(Select.field(TaskStatusCreateDTO::slug), () -> faker.internet().slug())
