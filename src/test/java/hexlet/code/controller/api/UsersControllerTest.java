@@ -56,7 +56,7 @@ class UsersControllerTest {
 
     @BeforeEach
     void setUp() {
-        testUser = Instancio.of(userGenerator.getUserModel()).create();
+        testUser = Instancio.of(userGenerator.getModel()).create();
         userRepository.save(testUser);
     }
 
@@ -88,7 +88,7 @@ class UsersControllerTest {
 
     @Test
     void testCreate() throws Exception {
-        User data = Instancio.of(userGenerator.getUserModel()).create();
+        User data = Instancio.of(userGenerator.getModel()).create();
 
         UserCreateDTO dto = toCreateDTO(data);
 
@@ -107,8 +107,12 @@ class UsersControllerTest {
 
     @Test
     void testUpdate() throws Exception {
-        var dto = new UserUpdateDTO();
-        dto.setFirstName(JsonNullable.of("newName"));
+        var dto = Instancio.of(userGenerator.getUpdateDTO())
+                .set(
+                        Select.field(UserUpdateDTO::firstName),
+                        JsonNullable.of("New name")
+                )
+                .create();
 
         mockMvc.perform(put(ID_URL, testUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
@@ -118,7 +122,7 @@ class UsersControllerTest {
 
         User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
 
-        assertThat(updatedUser.getFirstName()).isEqualTo("newName");
+        assertThat(updatedUser.getFirstName()).isEqualTo("New name");
         assertThat(updatedUser.getEmail()).isEqualTo(testUser.getEmail());
     }
 
@@ -140,7 +144,7 @@ class UsersControllerTest {
 
     @Test
     void testCreateWithoutAdmin() throws Exception {
-        UserCreateDTO dto = Instancio.of(userGenerator.getUserCreateDTOModel()).create();
+        UserCreateDTO dto = Instancio.of(userGenerator.getCreateDTO()).create();
 
         mockMvc.perform(post(BASE_URL)
                         .with(jwt())
@@ -152,11 +156,15 @@ class UsersControllerTest {
 
     @Test
     void testUpdateOtherUser() throws Exception {
-        User otherUser = Instancio.of(userGenerator.getUserModel()).create();
+        User otherUser = Instancio.of(userGenerator.getModel()).create();
         userRepository.save(otherUser);
 
-        var dto = new UserUpdateDTO();
-        dto.setFirstName(JsonNullable.of("newName"));
+        var dto = Instancio.of(userGenerator.getUpdateDTO())
+                .set(
+                        Select.field(UserUpdateDTO::firstName),
+                        JsonNullable.of("New name")
+                )
+                .create();
 
         mockMvc.perform(put(ID_URL, otherUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))
@@ -167,7 +175,7 @@ class UsersControllerTest {
 
     @Test
     void testDestroyOtherUser() throws Exception {
-        User otherUser = Instancio.of(userGenerator.getUserModel()).create();
+        User otherUser = Instancio.of(userGenerator.getModel()).create();
         userRepository.save(otherUser);
 
         mockMvc.perform(delete(ID_URL, otherUser.getId())
@@ -179,7 +187,7 @@ class UsersControllerTest {
 
     @Test
     void testCreateWithInvalidData() throws Exception {
-        var dto = Instancio.of(userGenerator.getUserCreateDTOModel())
+        var dto = Instancio.of(userGenerator.getCreateDTO())
                 .set(Select.field(UserCreateDTO::password), "12")
                 .create();
 
@@ -192,8 +200,12 @@ class UsersControllerTest {
 
     @Test
     void testUpdateWithInvalidEmail() throws Exception {
-        var dto = new UserUpdateDTO();
-        dto.setEmail(JsonNullable.of("Invalid email"));
+        var dto = Instancio.of(userGenerator.getUpdateDTO())
+                .set(
+                        Select.field(UserUpdateDTO::email),
+                        JsonNullable.of("Invalid email")
+                )
+                .create();
 
         mockMvc.perform(put(ID_URL, testUser.getId())
                         .with(jwt().jwt(builder -> builder.subject(testUser.getEmail())))

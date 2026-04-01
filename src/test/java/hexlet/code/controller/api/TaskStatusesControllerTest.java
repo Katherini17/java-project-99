@@ -7,6 +7,7 @@ import hexlet.code.model.TaskStatus;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.util.generator.TaskStatusGenerator;
 import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -50,7 +51,7 @@ class TaskStatusesControllerTest {
 
     @BeforeEach
     void setUp() {
-        testTaskStatus = Instancio.of(taskStatusGenerator.getTaskStatusModel())
+        testTaskStatus = Instancio.of(taskStatusGenerator.getModel())
                 .create();
         taskStatusRepository.save(testTaskStatus);
     }
@@ -81,7 +82,7 @@ class TaskStatusesControllerTest {
 
     @Test
     void testCreate() throws Exception {
-        TaskStatus data = Instancio.of(taskStatusGenerator.getTaskStatusModel())
+        TaskStatus data = Instancio.of(taskStatusGenerator.getModel())
                 .create();
         TaskStatusCreateDTO dto = toCreateDTO(data);
 
@@ -100,8 +101,12 @@ class TaskStatusesControllerTest {
 
     @Test
     void testUpdate() throws Exception {
-        var dto = new TaskStatusUpdateDTO();
-        dto.setName(JsonNullable.of("newName"));
+        var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+                .set(
+                        Select.field(TaskStatusUpdateDTO::name),
+                        JsonNullable.of("New name")
+                )
+                .create();
 
         mockMvc.perform(put(ID_URL, testTaskStatus.getId())
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
@@ -113,7 +118,7 @@ class TaskStatusesControllerTest {
                         .orElse(null);
 
         assertThat(updatedTaskStatus).isNotNull();
-        assertThat(updatedTaskStatus.getName()).isEqualTo("newName");
+        assertThat(updatedTaskStatus.getName()).isEqualTo("New name");
         assertThat(updatedTaskStatus.getSlug()).isEqualTo(testTaskStatus.getSlug());
     }
 
@@ -128,7 +133,7 @@ class TaskStatusesControllerTest {
 
     @Test
     void testCreateWithoutAdmin() throws Exception {
-        var dto = Instancio.of(taskStatusGenerator.getTaskStatusCreateDTOModel()).create();
+        var dto = Instancio.of(taskStatusGenerator.getCreateDTO()).create();
 
         mockMvc.perform(post(BASE_URL)
                         .with(jwt())
@@ -139,8 +144,12 @@ class TaskStatusesControllerTest {
 
     @Test
     void testUpdateWithoutAdmin() throws Exception {
-        var dto = new TaskStatusUpdateDTO();
-        dto.setName(JsonNullable.of("New Name"));
+        var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+                .set(
+                        Select.field(TaskStatusUpdateDTO::name),
+                        JsonNullable.of("New name")
+                )
+                .create();
 
         mockMvc.perform(put(ID_URL, testTaskStatus.getId())
                         .with(jwt())
@@ -179,8 +188,12 @@ class TaskStatusesControllerTest {
 
     @Test
     void testUpdateWithInvalidData() throws Exception {
-        var dto = new TaskStatusUpdateDTO();
-        dto.setName(JsonNullable.of(""));
+        var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+                .set(
+                        Select.field(TaskStatusUpdateDTO::name),
+                        JsonNullable.of("")
+                )
+                .create();
 
         mockMvc.perform(put(ID_URL, testTaskStatus.getId())
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
