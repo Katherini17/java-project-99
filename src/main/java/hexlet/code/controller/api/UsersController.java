@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static hexlet.code.util.PageUtils.buildPagingResponse;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
@@ -40,14 +44,16 @@ public class UsersController {
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int perPage,
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "ASC") String order
+            @RequestParam(defaultValue = "ASC") Sort.Direction order
     ) {
-        Page<UserDTO> resultPage = userService.getAll(page - 1, perPage, sort, order);
+        var pageRequest = PageRequest.of(
+                page - 1,
+                perPage,
+                Sort.by(order, sort)
+        );
+        Page<UserDTO> resultPage = userService.getAll(pageRequest);
 
-        return ResponseEntity.ok()
-                .header("X-Total-Count", String.valueOf(resultPage.getTotalElements()))
-                .header("Access-Control-Expose-Headers", "X-Total-Count")
-                .body(resultPage.getContent());
+        return buildPagingResponse(resultPage);
     }
 
     @GetMapping(path = "/{id}")

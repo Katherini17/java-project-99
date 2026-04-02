@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static hexlet.code.util.PageUtils.buildPagingResponse;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/task_statuses")
@@ -33,12 +35,7 @@ public class TaskStatusesController {
 
     @GetMapping("")
     public ResponseEntity<List<TaskStatusDTO>> index() {
-        List<TaskStatusDTO> taskStatuses = taskStatusService.getAll();
-
-        return ResponseEntity.ok()
-                .header("X-Total-Count", String.valueOf(taskStatuses.size()))
-                .header("Access-Control-Expose-Headers", "X-Total-Count")
-                .body(taskStatuses);
+        return buildPagingResponse(taskStatusService.getAll());
     }
 
     @GetMapping("/{id}")
