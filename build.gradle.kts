@@ -13,6 +13,13 @@ group = "hexlet.code"
 version = "0.0.1-SNAPSHOT"
 description = "Task management system built with Spring Boot"
 
+val mapstructVersion = "1.6.3"
+val lombokMapstructBindingVersion = "0.2.0"
+val jacksonNullableVersion = "0.2.9"
+val instancioVersion = "6.0.0-RC2"
+val datafakerVersion = "2.5.4"
+val jsonUnitVersion = "5.1.1"
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
@@ -26,26 +33,25 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql")
 
-	implementation("org.mapstruct:mapstruct:1.6.3")
-	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
-	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
-	implementation("org.openapitools:jackson-databind-nullable:0.2.9")
+	implementation("org.mapstruct:mapstruct:$mapstructVersion")
+	annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:$lombokMapstructBindingVersion")
+	implementation("org.openapitools:jackson-databind-nullable:$jacksonNullableVersion")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-	testImplementation("org.instancio:instancio-junit:6.0.0-RC2")
-	implementation("net.datafaker:datafaker:2.5.4")
-	testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.1")
-
+	testImplementation("org.instancio:instancio-junit:$instancioVersion")
+	testImplementation("net.javacrumbs.json-unit:json-unit-assertj:$jsonUnitVersion")
+	implementation("net.datafaker:datafaker:$datafakerVersion")
 }
 
 tasks.withType<Test> {
