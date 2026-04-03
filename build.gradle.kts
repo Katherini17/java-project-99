@@ -50,6 +50,31 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+
+	testLogging {
+		events("skipped", "passed", "failed")
+
+		showExceptions = true
+		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+		showStackTraces = false
+
+		displayGranularity = 2
+		showCauses = true
+	}
+
+	finalizedBy(tasks.jacocoTestReport)
+
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+	}
+}
+
+jacoco {
+	toolVersion = "0.8.14"
 }
 
 application {
@@ -61,18 +86,4 @@ sonar {
 		property("sonar.projectKey", "Katherini17_java-project-99")
 		property("sonar.organization", "katherini-17-projects")
 	}
-}
-
-tasks.test {
-	finalizedBy(tasks.jacocoTestReport)
-}
-tasks.jacocoTestReport {
-	dependsOn(tasks.test)
-	reports {
-		xml.required.set(true)
-	}
-}
-
-jacoco {
-	toolVersion = "0.8.14"
 }
