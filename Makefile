@@ -1,8 +1,5 @@
 install:
-	@./gradlew clean installDist
-
-run-dist:
-	@java -jar build/libs/app.jar
+	@./gradlew clean install
 
 run:
 	@./gradlew bootRun
@@ -11,7 +8,7 @@ build:
 	@./gradlew clean build
 
 test:
-	@./gradlew test
+	@./gradlew cleanTest test
 
 lint:
 	@./gradlew checkstyleMain checkstyleTest
@@ -20,9 +17,9 @@ test-report:
 	@./gradlew jacocoTestReport
 
 clean:
-	@./gradlew clean bootJar
+	@./gradlew clean
 
 check-updates:
 	@./gradlew dependencyUpdates
 
-.PHONY: build
+.PHONY: build test clean run lint check-updates test-report install
