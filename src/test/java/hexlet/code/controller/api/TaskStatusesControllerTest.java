@@ -9,6 +9,7 @@ import hexlet.code.util.generator.TaskStatusGenerator;
 import org.instancio.Instancio;
 import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,163 +46,181 @@ class TaskStatusesControllerTest {
     @Autowired
     private TaskStatusGenerator taskStatusGenerator;
 
-    private TaskStatus testTaskStatus;
+    private TaskStatus testStatus;
 
     private static final String BASE_URL = "/api/task_statuses";
-    private static final String ID_URL = "%s/{id}".formatted(BASE_URL);
+    private static final String ID_URL = BASE_URL + "/{id}";
 
     @BeforeEach
     void setUp() {
-        testTaskStatus = Instancio.of(taskStatusGenerator.getModel())
-                .create();
-        taskStatusRepository.save(testTaskStatus);
+        testStatus = Instancio.create(taskStatusGenerator.getModel());
+        taskStatusRepository.save(testStatus);
     }
 
-    @Test
-    void testIndex() throws Exception {
-        var result = mockMvc.perform(get(BASE_URL).with(jwt()))
-                .andExpect(status().isOk())
-                .andReturn();
+    @Nested
+    class GetTaskStatuses {
+        @Test
+        void index() throws Exception {
+            long expectedCount = taskStatusRepository.count();
+            var result = mockMvc.perform(get(BASE_URL).with(jwt()))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("X-Total-Count", String.valueOf(expectedCount)))
+                    .andExpect(header().string("Access-Control-Expose-Headers", "X-Total-Count"))
+                    .andReturn();
 
-        var body = result.getResponse().getContentAsString();
-        assertThatJson(body).isArray();
+            var body = result.getResponse().getContentAsString();
+            assertThatJson(body).isArray();
+        }
+
+        @Test
+        void show() throws Exception {
+            var result = mockMvc.perform(get(ID_URL, testStatus.getId())
+                            .with(jwt()))
+                    .andExpect(status().isOk())
+                    .andReturn();
+            var body = result.getResponse().getContentAsString();
+
+            assertThatJson(body).and(
+                    v -> v.node("name").isEqualTo(testStatus.getName()),
+                    v -> v.node("slug").isEqualTo(testStatus.getSlug())
+            );
+        }
+
+        @Test
+        void showNotFound() throws Exception {
+            mockMvc.perform(get(ID_URL, 11111).with(jwt()))
+                    .andExpect(status().isNotFound());
+        }
     }
 
-    @Test
-    void testShow() throws Exception {
-        var result = mockMvc.perform(get(ID_URL, testTaskStatus.getId())
-                        .with(jwt()))
-                .andExpect(status().isOk())
-                .andReturn();
-        var body = result.getResponse().getContentAsString();
+    @Nested
+    class CreateTaskStatus {
+        @Test
+        void create() throws Exception {
+            TaskStatus data = Instancio.create(taskStatusGenerator.getModel());
+            TaskStatusCreateDTO dto = toCreateDTO(data);
 
-        assertThatJson(body).and(
-                v -> v.node("name").isEqualTo(testTaskStatus.getName()),
-                v -> v.node("slug").isEqualTo(testTaskStatus.getSlug())
-        );
+            mockMvc.perform(post(BASE_URL)
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isCreated());
+
+            TaskStatus createdStatus = taskStatusRepository.findBySlug(data.getSlug())
+                    .orElse(null);
+
+            assertThat(createdStatus).isNotNull().satisfies(status -> {
+                assertThat(status.getName()).isEqualTo(data.getName());
+                assertThat(status.getSlug()).isEqualTo(data.getSlug());
+            });
+        }
+
+        @Test
+        void createWithoutAdmin() throws Exception {
+            var dto = Instancio.create(taskStatusGenerator.getCreateDTO());
+
+            mockMvc.perform(post(BASE_URL)
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void createWithInvalidData() throws Exception {
+            var dto = new TaskStatusCreateDTO("", "");
+
+            mockMvc.perform(post(BASE_URL)
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest());
+        }
+
     }
 
-    @Test
-    void testCreate() throws Exception {
-        TaskStatus data = Instancio.of(taskStatusGenerator.getModel())
-                .create();
-        TaskStatusCreateDTO dto = toCreateDTO(data);
+    @Nested
+    class UpdateTaskStatus {
+        @Test
+        void update() throws Exception {
+            var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+                    .set(
+                            Select.field(TaskStatusUpdateDTO::name),
+                            JsonNullable.of("New name")
+                    )
+                    .create();
 
-        mockMvc.perform(post(BASE_URL)
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated());
+            mockMvc.perform(put(ID_URL, testStatus.getId())
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
 
-        TaskStatus createdTaskStatus = taskStatusRepository.findBySlug(data.getSlug())
-                .orElse(null);
+            TaskStatus updatedStatus = taskStatusRepository.findById(testStatus.getId())
+                    .orElse(null);
 
-        assertThat(createdTaskStatus).isNotNull();
-        assertThat(createdTaskStatus.getName()).isEqualTo(data.getName());
+            assertThat(updatedStatus).isNotNull().satisfies(status -> {
+                assertThat(status.getName()).isEqualTo("New name");
+                assertThat(status.getSlug()).isEqualTo(testStatus.getSlug());
+            });
+        }
+
+        @Test
+        void updateWithoutAdmin() throws Exception {
+            var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+                    .set(
+                            Select.field(TaskStatusUpdateDTO::name),
+                            JsonNullable.of("New name")
+                    )
+                    .create();
+
+            mockMvc.perform(put(ID_URL, testStatus.getId())
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void updateWithInvalidData() throws Exception {
+            var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+                    .set(
+                            Select.field(TaskStatusUpdateDTO::name),
+                            JsonNullable.of("")
+                    )
+                    .create();
+
+            mockMvc.perform(put(ID_URL, testStatus.getId())
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
-    @Test
-    void testUpdate() throws Exception {
-        var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
-                .set(
-                        Select.field(TaskStatusUpdateDTO::name),
-                        JsonNullable.of("New name")
-                )
-                .create();
+    @Nested
+    class DeleteTaskStatus {
+        @Test
+        void destroy() throws Exception {
+            mockMvc.perform(delete(ID_URL, testStatus.getId())
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                    .andExpect(status().isNoContent());
 
-        mockMvc.perform(put(ID_URL, testTaskStatus.getId())
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+            assertThat(taskStatusRepository.existsById(testStatus.getId())).isFalse();
+        }
 
-        TaskStatus updatedTaskStatus = taskStatusRepository.findById(testTaskStatus.getId())
-                        .orElse(null);
 
-        assertThat(updatedTaskStatus).isNotNull();
-        assertThat(updatedTaskStatus.getName()).isEqualTo("New name");
-        assertThat(updatedTaskStatus.getSlug()).isEqualTo(testTaskStatus.getSlug());
+        @Test
+        void destroyWithoutAdmin() throws Exception {
+            mockMvc.perform(delete(ID_URL, testStatus.getId())
+                            .with(jwt()))
+                    .andExpect(status().isForbidden());
+
+            assertThat(taskStatusRepository.existsById(testStatus.getId())).isTrue();
+        }
+
     }
 
-    @Test
-    void testDestroy() throws Exception {
-        mockMvc.perform(delete(ID_URL, testTaskStatus.getId())
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isNoContent());
-
-        assertThat(taskStatusRepository.existsById(testTaskStatus.getId())).isFalse();
-    }
-
-    @Test
-    void testCreateWithoutAdmin() throws Exception {
-        var dto = Instancio.of(taskStatusGenerator.getCreateDTO()).create();
-
-        mockMvc.perform(post(BASE_URL)
-                        .with(jwt())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testUpdateWithoutAdmin() throws Exception {
-        var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
-                .set(
-                        Select.field(TaskStatusUpdateDTO::name),
-                        JsonNullable.of("New name")
-                )
-                .create();
-
-        mockMvc.perform(put(ID_URL, testTaskStatus.getId())
-                        .with(jwt())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testDestroyWithoutAdmin() throws Exception {
-        mockMvc.perform(delete(ID_URL, testTaskStatus.getId())
-                        .with(jwt()))
-                .andExpect(status().isForbidden());
-
-        assertThat(taskStatusRepository.existsById(testTaskStatus.getId())).isTrue();
-    }
-
-
-
-    @Test
-    void testShowNotFound() throws Exception {
-        mockMvc.perform(get(ID_URL, 11111).with(jwt()))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testCreateWithInvalidData() throws Exception {
-        var dto = new TaskStatusCreateDTO("", "");
-
-        mockMvc.perform(post(BASE_URL)
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testUpdateWithInvalidData() throws Exception {
-        var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
-                .set(
-                        Select.field(TaskStatusUpdateDTO::name),
-                        JsonNullable.of("")
-                )
-                .create();
-
-        mockMvc.perform(put(ID_URL, testTaskStatus.getId())
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
 
     private TaskStatusCreateDTO toCreateDTO(TaskStatus data) {
         return new TaskStatusCreateDTO(
