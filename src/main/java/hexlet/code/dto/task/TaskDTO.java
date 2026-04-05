@@ -3,6 +3,7 @@ package hexlet.code.dto.task;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
+import java.util.Set;
 
 public record TaskDTO(
     Long id,
@@ -14,5 +15,8 @@ public record TaskDTO(
 
     String title,
     String content,
-    String status
+    String status,
+
+    @JsonProperty("task_labels_ids")
+    Set<Long> taskLabelIds
 ) { }
