@@ -1,9 +1,11 @@
 package hexlet.code.component;
 
+import hexlet.code.model.Label;
 import hexlet.code.model.Role;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.TaskStatusEnum;
 import hexlet.code.model.User;
+import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final TaskStatusRepository taskStatusRepository;
+    private final LabelRepository labelRepository;
 
     @Value("${config.admin.email}")
     private String adminEmail;
@@ -36,11 +39,13 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         initializeAdmin();
         initializeTaskStatuses();
+        initializeLabels();
 
     }
 
     private void initializeAdmin() {
         if (userRepository.findByEmail(adminEmail).isEmpty()) {
+
             var admin = new User();
             admin.setEmail(adminEmail);
             admin.setPassword(adminPassword, passwordEncoder);
@@ -56,13 +61,27 @@ public class DataInitializer implements CommandLineRunner {
                 .filter(status -> taskStatusRepository.findBySlug(status.getSlug()).isEmpty())
                 .forEach(status -> {
 
-                    var taskStatus = new TaskStatus();
-                    taskStatus.setName(status.getName());
-                    taskStatus.setSlug(status.getSlug());
+                    var newStatus = new TaskStatus();
+                    newStatus.setName(status.getName());
+                    newStatus.setSlug(status.getSlug());
 
-                    taskStatusRepository.save(taskStatus);
+                    taskStatusRepository.save(newStatus);
                     log.info("Default task status created: {}", status.getSlug());
-
                 });
     }
+
+    private void initializeLabels() {
+        Arrays.stream(LabelEnum.values())
+                .filter(label -> labelRepository.findByName(label.getName()).isEmpty())
+                .forEach(label -> {
+
+                    var newLabel = new Label();
+                    newLabel.setName(label.getName());
+
+                    labelRepository.save(newLabel);
+                    log.info("Initialized label: {}", label.getName());
+                });
+    }
+
+
 }
