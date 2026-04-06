@@ -13,6 +13,8 @@ import org.instancio.Model;
 import org.instancio.Select;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 @Getter
 @Component
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class UserGenerator {
 
 
     private final Faker faker;
+    private static final AtomicLong COUNTER = new AtomicLong(1);
 
     @PostConstruct
     public void init() {
@@ -39,7 +42,10 @@ public class UserGenerator {
                 .ignore(Select.field(User::getUpdatedAt))
                 .supply(Select.field(User::getFirstName), () -> faker.name().firstName())
                 .supply(Select.field(User::getLastName), () -> faker.name().lastName())
-                .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
+                .supply(
+                        Select.field(User::getEmail),
+                        () -> "user%d@example.com".formatted(COUNTER.getAndIncrement())
+                )
                 .supply(Select.field(User::getPassword), () -> faker.credentials().password(3, 10))
                 .toModel();
     }
@@ -48,7 +54,10 @@ public class UserGenerator {
         return Instancio.of(UserCreateDTO.class)
                 .supply(Select.field(UserCreateDTO::firstName), () -> faker.name().firstName())
                 .supply(Select.field(UserCreateDTO::lastName), () -> faker.name().lastName())
-                .supply(Select.field(UserCreateDTO::email), () -> faker.internet().emailAddress())
+                .supply(
+                        Select.field(UserCreateDTO::email),
+                        () -> "user%d@example.com".formatted(COUNTER.getAndIncrement())
+                )
                 .supply(Select.field(UserCreateDTO::password), () -> faker.credentials().password(3, 10))
                 .toModel();
     }

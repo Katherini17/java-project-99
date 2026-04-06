@@ -13,6 +13,8 @@ import org.instancio.Model;
 import org.instancio.Select;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+
 @Getter
 @Component
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class TaskGenerator {
                 .supply(Select.field(Task::getName), () -> faker.lorem().sentence(3))
                 .supply(Select.field(Task::getDescription), () -> faker.lorem().paragraph())
                 .supply(Select.field(Task::getIndex), () -> faker.number().positive())
+                .supply(Select.field(Task::getLabels), () -> new HashSet<>())
                 .toModel();
     }
 
@@ -50,6 +53,7 @@ public class TaskGenerator {
                 .supply(Select.field(TaskCreateDTO::title), () -> faker.lorem().sentence(3))
                 .supply(Select.field(TaskCreateDTO::content), () -> faker.lorem().paragraph())
                 .supply(Select.field(TaskCreateDTO::index), () -> faker.number().positive())
+                .supply(Select.field(TaskCreateDTO::taskLabelIds), () -> new HashSet<>())
                 .toModel();
     }
 }

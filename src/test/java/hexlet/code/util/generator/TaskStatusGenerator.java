@@ -13,6 +13,8 @@ import org.instancio.Model;
 import org.instancio.Select;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 @Getter
 @Component
 @RequiredArgsConstructor
@@ -23,6 +25,8 @@ public class TaskStatusGenerator {
     private Model<TaskStatusUpdateDTO> updateDTO;
 
     private final Faker faker;
+
+    private static final AtomicLong COUNTER = new AtomicLong(1);
 
     @PostConstruct
     public void init() {
@@ -37,7 +41,10 @@ public class TaskStatusGenerator {
                 .ignore(Select.field(TaskStatus::getId))
                 .ignore(Select.field(TaskStatus::getCreatedAt))
                 .supply(Select.field(TaskStatus::getName), () -> faker.lorem().word())
-                .supply(Select.field(TaskStatus::getSlug), () -> faker.internet().slug())
+                .supply(
+                        Select.field(TaskStatus::getSlug),
+                        () -> "%s_%d".formatted(faker.internet().slug(), COUNTER.getAndIncrement())
+                )
                 .toModel();
     }
 
