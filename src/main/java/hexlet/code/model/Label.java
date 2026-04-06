@@ -29,7 +29,7 @@ public class Label {
 
     @NotBlank
     @Column(unique = true)
-    @Size(min = 3, max = 100)
+    @Size(min = 3, max = 1000)
     private String name;
 
     @CreatedDate
