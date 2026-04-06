@@ -4,6 +4,7 @@ import hexlet.code.dto.task.TaskCreateDTO;
 import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
 import hexlet.code.service.TaskService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -35,6 +36,7 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequestMapping("/api/tasks")
 @Validated
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "Tasks", description = "Task CRUD and advanced filtering")
 public class TasksController {
 
     private final TaskService taskService;

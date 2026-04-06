@@ -4,8 +4,10 @@ import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
 import hexlet.code.dto.taskstatus.TaskStatusDTO;
 import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
 import hexlet.code.service.TaskStatusService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,13 +31,14 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequestMapping("/api/task_statuses")
 @Validated
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "Statuses", description = "Dictionary of task statuses")
 public class TaskStatusesController {
 
     private final TaskStatusService taskStatusService;
 
     @GetMapping("")
     public ResponseEntity<List<TaskStatusDTO>> index() {
-        return buildPagingResponse(taskStatusService.getAll());
+        return buildPagingResponse(taskStatusService.getAll(Pageable.unpaged()));
     }
 
     @GetMapping("/{id}")

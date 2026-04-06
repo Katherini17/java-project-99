@@ -4,6 +4,7 @@ import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
 import hexlet.code.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -34,6 +35,7 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
 @Validated
+@Tag(name = "Users", description = "User management and registration")
 public class UsersController {
 
     private final UserService userService;
