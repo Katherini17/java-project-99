@@ -19,6 +19,7 @@ val jacksonNullableVersion = "0.2.9"
 val instancioVersion = "6.0.0-RC2"
 val datafakerVersion = "2.5.4"
 val jsonUnitVersion = "5.1.1"
+val springdocVersion = "2.8.16"
 
 java {
 	toolchain {
@@ -33,6 +34,7 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
