@@ -1,9 +1,7 @@
 package hexlet.code.component.converter;
 
-import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.exception.UnprocessableEntityException;
 import hexlet.code.model.Label;
-import hexlet.code.model.Task;
 import hexlet.code.repository.LabelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,7 +19,7 @@ public class LabelConverter {
 
     public Set<Label> toEntity(Set<Long> labelIds) {
         if (labelIds == null) {
-            return null;
+            return new HashSet<>();
         }
 
         return Optional.of(labelIds)
