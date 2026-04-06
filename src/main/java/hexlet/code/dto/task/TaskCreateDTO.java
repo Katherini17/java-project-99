@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.Set;
+
 public record TaskCreateDTO(
     Integer index,
 
@@ -17,6 +19,8 @@ public record TaskCreateDTO(
     String content,
 
     @NotBlank
-    String status
+    String status,
+
+    Set<Long> taskLabelIds
 ) { }
 

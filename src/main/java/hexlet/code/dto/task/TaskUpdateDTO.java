@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Size;
 import org.openapitools.jackson.nullable.JsonNullable;
 
+import java.util.Set;
+
 public record TaskUpdateDTO(
         JsonNullable<Integer> index,
 
@@ -14,5 +16,7 @@ public record TaskUpdateDTO(
         JsonNullable<String> title,
 
         JsonNullable<String> content,
-        JsonNullable<String> status
+        JsonNullable<String> status,
+
+        JsonNullable<Set<Long>> taskLabelIds
 ) { }

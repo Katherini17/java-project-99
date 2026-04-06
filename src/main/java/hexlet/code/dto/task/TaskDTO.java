@@ -17,6 +17,5 @@ public record TaskDTO(
     String content,
     String status,
 
-    @JsonProperty("task_labels_ids")
     Set<Long> taskLabelIds
 ) { }
