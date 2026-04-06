@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -22,7 +23,9 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Entity
@@ -61,6 +64,8 @@ public class Task implements BaseEntity {
     @Column(updatable = false)
     private Instant createdAt;
 
+    @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE)
     @ManyToMany
     @JoinTable(
             name = "task_labels",
@@ -68,5 +73,18 @@ public class Task implements BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "label_id")
     )
     private Set<Label> labels = new HashSet<>();
+
+    public void addLabel(Label label) {
+        labels.add(label);
+    }
+
+    public void setLabels(Set<Label> newLabels) {
+        this.labels.clear();
+        Optional.ofNullable(newLabels).ifPresent(this.labels::addAll);
+    }
+
+    public Set<Label> getLabels() {
+        return Collections.unmodifiableSet(labels);
+    }
 
 }
