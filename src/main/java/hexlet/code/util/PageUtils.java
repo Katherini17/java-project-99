@@ -20,11 +20,4 @@ public final class PageUtils {
                 .body(page.getContent());
     }
 
-    public static <T> ResponseEntity<List<T>> buildPagingResponse(List<T> content) {
-        return ResponseEntity.ok()
-                .header(TOTAL_COUNT_HEADER, String.valueOf(content.size()))
-                .header("Access-Control-Expose-Headers", TOTAL_COUNT_HEADER)
-                .body(content);
-    }
-
 }
