@@ -2,6 +2,7 @@ package hexlet.code.handler;
 
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.exception.UnprocessableEntityException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -40,7 +41,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .stream()
                 .collect(Collectors.toMap(
                         FieldError::getField,
-                        error -> Objects.requireNonNullElse(error.getDefaultMessage(), "Invalid value"),
+                        error -> Objects.requireNonNullElse(
+                                error.getDefaultMessage(),
+                                "Invalid value"
+                        ),
                         (existing, replacement) -> existing
                 ));
 
@@ -65,5 +69,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UnprocessableEntityException.class)
     public ProblemDetail handleUnprocessableEntityException(UnprocessableEntityException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+    @SuppressWarnings("unused")
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "Cannot delete resource: it is currently in use by other entities"
+        );
     }
 }
