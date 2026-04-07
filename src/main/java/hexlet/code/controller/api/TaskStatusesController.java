@@ -35,6 +35,9 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @Validated
 @PreAuthorize("isAuthenticated()")
 @Tag(name = "Statuses", description = "Dictionary of task statuses")
+@ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+})
 public class TaskStatusesController {
 
     private final TaskStatusService taskStatusService;

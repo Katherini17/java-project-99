@@ -39,6 +39,9 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequestMapping("/api/users")
 @Validated
 @Tag(name = "Users", description = "User management and registration")
+@ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+})
 public class UsersController {
 
     private final UserService userService;

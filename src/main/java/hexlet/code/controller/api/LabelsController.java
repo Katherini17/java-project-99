@@ -36,6 +36,9 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @Validated
 @PreAuthorize("isAuthenticated()")
 @Tag(name = "Labels", description = "Dictionary of labels for grouping tasks")
+@ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+})
 public class LabelsController {
 
     private final LabelService labelService;

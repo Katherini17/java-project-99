@@ -42,6 +42,9 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @Validated
 @PreAuthorize("isAuthenticated()")
 @Tag(name = "Tasks", description = "Task CRUD and advanced filtering")
+@ApiResponses(value = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+})
 public class TasksController {
 
     private final TaskService taskService;
