@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
 import hexlet.code.model.User;
+import hexlet.code.repository.TaskRepository;
+import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import hexlet.code.util.generator.TaskGenerator;
+import hexlet.code.util.generator.TaskStatusGenerator;
 import hexlet.code.util.generator.UserGenerator;
 import org.instancio.Instancio;
 import org.instancio.Select;
@@ -43,6 +47,12 @@ class UsersControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -50,6 +60,12 @@ class UsersControllerTest {
 
     @Autowired
     private UserGenerator userGenerator;
+
+    @Autowired
+    private TaskStatusGenerator taskStatusGenerator;
+
+    @Autowired
+    private TaskGenerator taskGenerator;
 
     private User testUser;
 
@@ -97,6 +113,16 @@ class UsersControllerTest {
                     v -> v.node("firstName").isEqualTo(testUser.getFirstName()),
                     v -> v.node("password").isAbsent()
             );
+        }
+
+        @Test
+        void showByOtherUser() throws Exception {
+            var otherUser = Instancio.create(userGenerator.getModel());
+            userRepository.save(otherUser);
+
+            mockMvc.perform(get(ID_URL, otherUser.getId())
+                            .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
+                    .andExpect(status().isForbidden());
         }
 
         @Test
@@ -180,7 +206,26 @@ class UsersControllerTest {
         }
 
         @Test
-        void updateOtherUser() throws Exception {
+        void updateByAdmin() throws Exception {
+            var dto = Instancio.of(userGenerator.getUpdateDTO())
+                    .set(Select.field(UserUpdateDTO::firstName), JsonNullable.of("New name"))
+                    .create();
+
+            mockMvc.perform(put(ID_URL, testUser.getId())
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
+
+            var user = userRepository.findById(testUser.getId()).orElseThrow();
+
+            assertThat(user).isNotNull().satisfies(u ->
+                assertThat(u.getFirstName()).isEqualTo("New name")
+            );
+        }
+
+        @Test
+        void updateByOtherUser() throws Exception {
             User otherUser = Instancio.create(userGenerator.getModel());
             userRepository.save(otherUser);
 
@@ -228,7 +273,25 @@ class UsersControllerTest {
         }
 
         @Test
-        void destroyOtherUser() throws Exception {
+        void destroyUserWithTasks() throws Exception {
+            var status = Instancio.create(taskStatusGenerator.getModel());
+            taskStatusRepository.save(status);
+
+            var task = Instancio.create(taskGenerator.getModel());
+            task.setAssignee(testUser);
+            task.setTaskStatus(status);
+            taskRepository.save(task);
+
+            mockMvc.perform(delete(ID_URL, testUser.getId())
+                            .with(jwt().jwt(builder -> builder.subject(testUser.getEmail()))))
+                    .andExpect(status().isUnprocessableEntity());
+
+            assertThat(userRepository.existsById(testUser.getId())).isTrue();
+        }
+
+
+        @Test
+        void destroyByOtherUser() throws Exception {
             User otherUser = Instancio.create(userGenerator.getModel());
             userRepository.save(otherUser);
 
