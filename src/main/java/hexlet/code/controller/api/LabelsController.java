@@ -55,6 +55,7 @@ public class LabelsController {
     }
 
     @PutMapping(path = "/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public LabelDTO update(
             @RequestBody @Valid LabelUpdateDTO labelData,
             @PathVariable Long id
@@ -64,6 +65,7 @@ public class LabelsController {
 
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public void destroy(@PathVariable Long id) {
         labelService.delete(id);
     }
