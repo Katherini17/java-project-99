@@ -4,6 +4,7 @@ import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
 import hexlet.code.exception.ResourceNotFoundException;
+import hexlet.code.exception.UnprocessableEntityException;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.Role;
 import hexlet.code.model.User;
@@ -32,6 +33,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     private static final String USER_NOT_FOUND_MESSAGE = "User with id %d not found";
+    private static final String USER_LINKED_MESSAGE =
+            "User cannot be deleted while they are assigned to active tasks";
 
     public Page<UserDTO> getAll(Pageable pageable) {
         return userRepository.findAll(pageable)
@@ -51,12 +54,15 @@ public class UserService {
     }
 
     public UserDTO findById(Long id) {
-        return userMapper.map(findUserById(id));
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE.formatted(id)));
+
+        return userMapper.map(user);
     }
 
     @Transactional
     public UserDTO update(UserUpdateDTO userData, Long id) {
-        var user = findUserById(id);
+        var user = getUserForUpdate(id);
         userMapper.update(userData, user);
 
         Optional.ofNullable(userData.password())
@@ -70,12 +76,18 @@ public class UserService {
 
     @Transactional
     public void delete(Long id) {
-        userRepository.delete(findUserById(id));
+        var task = getUserForUpdate(id);
+
+        if (taskRepository.existsByAssigneeId(id)) {
+            throw new UnprocessableEntityException(USER_LINKED_MESSAGE);
+        }
+
+        userRepository.delete(task);
         log.info("User with id {} deleted", id);
     }
 
-    private User findUserById(Long id) {
-        return userRepository.findById(id)
+    private User getUserForUpdate(Long id) {
+        return userRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE.formatted(id)));
     }
 }

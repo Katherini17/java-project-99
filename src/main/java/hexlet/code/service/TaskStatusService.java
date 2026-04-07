@@ -4,6 +4,7 @@ import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
 import hexlet.code.dto.taskstatus.TaskStatusDTO;
 import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
 import hexlet.code.exception.ResourceNotFoundException;
+import hexlet.code.exception.UnprocessableEntityException;
 import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.repository.TaskRepository;
@@ -26,6 +27,8 @@ public class TaskStatusService {
     private final TaskStatusMapper taskStatusMapper;
 
     private static final String TASK_STATUS_NOT_FOUND_MESSAGE = "Task status with id %d not found";
+    private static final String TASK_STATUS_LINKED_MESSAGE =
+            "Cannot delete this status: it is assigned to one or more tasks";
 
     public Page<TaskStatusDTO> getAll(Pageable pageable) {
         return taskStatusRepository.findAll(pageable)
@@ -33,7 +36,10 @@ public class TaskStatusService {
     }
 
     public TaskStatusDTO findById(Long id) {
-        return taskStatusMapper.map(findStatusById(id));
+        var taskStatus = taskStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TASK_STATUS_NOT_FOUND_MESSAGE.formatted(id)));
+
+        return taskStatusMapper.map(taskStatus);
     }
 
     @Transactional
@@ -46,7 +52,7 @@ public class TaskStatusService {
 
     @Transactional
     public TaskStatusDTO update(TaskStatusUpdateDTO taskStatusData, Long id) {
-        var taskStatus = findStatusById(id);
+        var taskStatus = getStatusForUpdate(id);
         taskStatusMapper.update(taskStatusData, taskStatus);
 
         log.info("Task status with id {} updated", id);
@@ -55,13 +61,18 @@ public class TaskStatusService {
 
     @Transactional
     public void delete(Long id) {
-        taskStatusRepository.delete(findStatusById(id));
+        var taskStatus = getStatusForUpdate(id);
+
+        if (taskRepository.existsByTaskStatusId(id)) {
+            throw new UnprocessableEntityException(TASK_STATUS_LINKED_MESSAGE);
+        }
+
+        taskStatusRepository.delete(taskStatus);
         log.info("Task status with id {} deleted", id);
     }
 
-    private TaskStatus findStatusById(Long id) {
-        return taskStatusRepository.findById(id)
+    private TaskStatus getStatusForUpdate(Long id) {
+        return taskStatusRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TASK_STATUS_NOT_FOUND_MESSAGE.formatted(id)));
     }
-
 }

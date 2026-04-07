@@ -31,7 +31,10 @@ public class TaskService {
     }
 
     public TaskDTO findById(Long id) {
-        return taskMapper.map(findTaskById(id));
+        var task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TASK_NOT_FOUND_MESSAGE.formatted(id)));
+
+        return taskMapper.map(task);
     }
 
     @Transactional
@@ -44,7 +47,7 @@ public class TaskService {
 
     @Transactional
     public TaskDTO update(TaskUpdateDTO taskData, Long id) {
-        var task = findTaskById(id);
+        var task = getTaskForUpdate(id);
         taskMapper.update(taskData, task);
 
         log.info("Task with id {} updated", id);
@@ -53,12 +56,14 @@ public class TaskService {
 
     @Transactional
     public void delete(Long id) {
-        taskRepository.delete(findTaskById(id));
+        var task = getTaskForUpdate(id);
+
+        taskRepository.delete(task);
         log.info("Task with id {} deleted", id);
     }
 
-    private Task findTaskById(Long id) {
-        return taskRepository.findById(id)
+    private Task getTaskForUpdate(Long id) {
+        return taskRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TASK_NOT_FOUND_MESSAGE.formatted(id)));
     }
 }
