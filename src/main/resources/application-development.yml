@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:task_manager
+    url: jdbc:h2:mem:task_manager;
     username: sa
     password:
 
