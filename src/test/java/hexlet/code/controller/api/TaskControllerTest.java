@@ -3,12 +3,15 @@ package hexlet.code.controller.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.task.TaskCreateDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
+import hexlet.code.model.Label;
 import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
+import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import hexlet.code.util.generator.LabelGenerator;
 import hexlet.code.util.generator.TaskGenerator;
 import hexlet.code.util.generator.TaskStatusGenerator;
 import hexlet.code.util.generator.UserGenerator;
@@ -25,6 +28,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,6 +65,9 @@ class TaskControllerTest {
     private TaskStatusRepository taskStatusRepository;
 
     @Autowired
+    private LabelRepository labelRepository;
+
+    @Autowired
     private TaskGenerator taskGenerator;
 
     @Autowired
@@ -65,9 +76,14 @@ class TaskControllerTest {
     @Autowired
     private TaskStatusGenerator taskStatusGenerator;
 
+    @Autowired
+    private LabelGenerator labelGenerator;
+
     private Task testTask;
     private User testAssignee;
     private TaskStatus testStatus;
+    private Label testLabel1;
+    private Label testLabel2;
 
     private static final String BASE_URL = "/api/tasks";
     private static final String ID_URL = BASE_URL + "/{id}";
@@ -80,9 +96,15 @@ class TaskControllerTest {
         testStatus = Instancio.create(taskStatusGenerator.getModel());
         taskStatusRepository.save(testStatus);
 
+        testLabel1 = Instancio.create(labelGenerator.getModel());
+        testLabel2 = Instancio.create(labelGenerator.getModel());
+        labelRepository.saveAll(List.of(testLabel1, testLabel2));
+
         testTask = Instancio.create(taskGenerator.getModel());
         testTask.setAssignee(testAssignee);
         testTask.setTaskStatus(testStatus);
+        testTask.setLabels(Set.of(testLabel1, testLabel2));
+
         taskRepository.save(testTask);
     }
 
@@ -160,6 +182,47 @@ class TaskControllerTest {
         }
 
         @Test
+        void createWithLabels() throws Exception {
+            Long labelId = testLabel1.getId();
+
+            var dto = Instancio.of(taskGenerator.getCreateDTO())
+                    .set(Select.field(TaskCreateDTO::status), testStatus.getSlug())
+                    .set(Select.field(TaskCreateDTO::taskLabelIds), Set.of(labelId))
+                    .create();
+
+            var result = mockMvc.perform(post(BASE_URL)
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isCreated())
+                    .andReturn();
+
+            var body = result.getResponse().getContentAsString();
+            Long createdTaskId = objectMapper.readTree(body)
+                    .get("id")
+                    .asLong();
+
+            Task createdTask = taskRepository.findById(createdTaskId)
+                    .orElse(null);
+
+            assertThat(createdTask).isNotNull().satisfies(task ->
+                assertThat(task.getLabels())
+                        .extracting(Label::getId)
+                        .containsExactly(labelId)
+            );
+        }
+
+        @Test
+        void createWithoutAuth() throws Exception {
+            var data = Instancio.create(taskGenerator.getCreateDTO());
+
+            mockMvc.perform(post(BASE_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(data)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
         void createWithInvalidData() throws Exception {
             var dto = Instancio.of(taskGenerator.getCreateDTO())
                     .set(Select.field(TaskCreateDTO::status), null)
@@ -204,6 +267,77 @@ class TaskControllerTest {
                 assertThat(task.getTaskStatus().getSlug()).isEqualTo(testStatus.getSlug());
                 assertThat(task.getAssignee().getId()).isEqualTo(testAssignee.getId());
             });
+        }
+
+        @Test
+        void updateReplaceLabels() throws Exception {
+            var newLabel = Instancio.create(labelGenerator.getModel());
+            labelRepository.save(newLabel);
+
+            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+                    .set(
+                            Select.field(TaskUpdateDTO::taskLabelIds),
+                            JsonNullable.of(Set.of(newLabel.getId()))
+                    )
+                    .create();
+
+            mockMvc.perform(put(ID_URL, testTask.getId())
+                            .with(jwt().jwt(builder -> builder.subject(testAssignee.getEmail())))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
+
+            var updatedTask = taskRepository.findById(testTask.getId()).orElse(null);
+
+            assertThat(updatedTask).isNotNull().satisfies(task ->
+                assertThat(task.getLabels())
+                        .extracting(Label::getId)
+                        .containsExactly(newLabel.getId())
+            );
+        }
+
+        @Test
+        void updateClearLabels() throws Exception {
+            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+                    .set(Select.field(
+                            TaskUpdateDTO::taskLabelIds),
+                            JsonNullable.of(Set.of())
+                    )
+                    .create();
+
+            mockMvc.perform(put(ID_URL, testTask.getId())
+                            .with(jwt().jwt(builder -> builder.subject(testAssignee.getEmail())))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
+
+            var updatedTask = taskRepository.findById(testTask.getId()).orElse(null);
+
+            assertThat(updatedTask).isNotNull().satisfies(task ->
+                assertThat(task.getLabels()).isEmpty()
+            );
+        }
+
+        @Test
+        void updateByAdmin() throws Exception {
+            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+                    .set(
+                            Select.field(TaskUpdateDTO::title),
+                            JsonNullable.of("New title")
+                    )
+                    .create();
+
+            mockMvc.perform(put(ID_URL, testTask.getId())
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
+
+            var updatedTask = taskRepository.findById(testTask.getId()).orElse(null);
+
+            assertThat(updatedTask).isNotNull().satisfies(task ->
+                assertThat(task.getName()).isEqualTo("New title")
+            );
         }
 
         @Test
@@ -280,12 +414,22 @@ class TaskControllerTest {
 
 
     private TaskCreateDTO toCreateDTO(Task data) {
+        Set<Long> labelIds = data.getLabels()
+                .stream()
+                .map(Label::getId)
+                .collect(Collectors.toSet());
+
+        Long assigneeId = Optional.of(data.getAssignee())
+                .map(User::getId)
+                .orElse(null);
+
         return new TaskCreateDTO(
                 data.getIndex(),
-                data.getAssignee().getId(),
+                assigneeId,
                 data.getName(),
                 data.getDescription(),
-                data.getTaskStatus().getSlug()
+                data.getTaskStatus().getSlug(),
+                labelIds
         );
     }
 
