@@ -20,6 +20,9 @@ import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,14 +36,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -109,6 +115,7 @@ class TaskControllerTest {
     }
 
     @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class GetTasks {
         @Test
         void index() throws Exception {
@@ -122,6 +129,37 @@ class TaskControllerTest {
             var body = result.getResponse().getContentAsString();
             assertThatJson(body).isArray();
         }
+
+        private Stream<String> filterKeyProvider() {
+            return Stream.of("titleCont", "status", "assigneeId", "labelId");
+        }
+
+        @ParameterizedTest
+        @MethodSource("filterKeyProvider")
+        void indexWithFilters(String key) throws Exception {
+
+            String value = switch (key) {
+                case "status" -> testTask.getTaskStatus().getSlug();
+                case "titleCont" -> testTask.getName();
+                case "assigneeId" -> testTask.getAssignee().getId().toString();
+                case "labelId" ->
+                        testTask.getLabels()
+                                .stream()
+                                .findFirst()
+                                .get()
+                                .getId()
+                                .toString();
+                default -> "";
+            };
+
+            mockMvc.perform(get("/api/tasks")
+                            .param(key, value)
+                            .with(jwt()))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("X-Total-Count", "1"))
+                    .andExpect(content().string(containsString(testTask.getName())));
+        }
+
 
         @Test
         void show() throws Exception {
