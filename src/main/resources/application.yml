@@ -27,3 +27,8 @@ config:
   admin:
     email: ${ADMIN_EMAIL:hexlet@example.com}
     password: ${ADMIN_PASSWORD:qwerty}
+
+sentry:
+  dsn: ${SENTRY_DSN:}
+  traces-sample-rate: 1.0
+  exception-resolver-order: -2147483648
