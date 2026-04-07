@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
 import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
 import hexlet.code.model.TaskStatus;
+import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
+import hexlet.code.util.generator.TaskGenerator;
 import hexlet.code.util.generator.TaskStatusGenerator;
 import org.instancio.Instancio;
 import org.instancio.Select;
@@ -21,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,7 +31,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 @SpringBootTest
@@ -41,10 +43,16 @@ class TaskStatusesControllerTest {
     private TaskStatusRepository taskStatusRepository;
 
     @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
     private TaskStatusGenerator taskStatusGenerator;
+
+    @Autowired
+    private TaskGenerator taskGenerator;
 
     private TaskStatus testStatus;
 
@@ -70,6 +78,12 @@ class TaskStatusesControllerTest {
 
             var body = result.getResponse().getContentAsString();
             assertThatJson(body).isArray();
+        }
+
+        @Test
+        void indexWithoutAuth() throws Exception {
+            mockMvc.perform(get(BASE_URL))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
@@ -124,6 +138,16 @@ class TaskStatusesControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void createWithoutAuth() throws Exception {
+            var dto = toCreateDTO(testStatus);
+
+            mockMvc.perform(post(BASE_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
@@ -209,6 +233,19 @@ class TaskStatusesControllerTest {
             assertThat(taskStatusRepository.existsById(testStatus.getId())).isFalse();
         }
 
+        @Test
+        void destroyWithLinkedTasks() throws Exception {
+            var task = Instancio.create(taskGenerator.getModel());
+            task.setTaskStatus(testStatus);
+            taskRepository.save(task);
+
+            mockMvc.perform(delete(ID_URL, testStatus.getId())
+                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                    .andExpect(status().isUnprocessableEntity());
+
+            assertThat(taskStatusRepository.existsById(testStatus.getId())).isTrue();
+        }
+
 
         @Test
         void destroyWithoutAdmin() throws Exception {
@@ -218,7 +255,6 @@ class TaskStatusesControllerTest {
 
             assertThat(taskStatusRepository.existsById(testStatus.getId())).isTrue();
         }
-
     }
 
 
