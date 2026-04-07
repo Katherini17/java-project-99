@@ -21,8 +21,7 @@ val datafakerVersion = "2.5.4"
 val jsonUnitVersion = "5.1.1"
 val springdocVersion = "2.8.16"
 val commonsLangVersion = "3.18.0"
-
-extra["sentryVersion"] = "8.27.0"
+val sentryVersion = "8.27.0"
 
 java {
 	toolchain {
@@ -41,7 +40,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-	implementation("io.sentry:sentry-spring-boot-starter-jakarta")
+	implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	implementation("org.apache.commons:commons-lang3:${commonsLangVersion}")
 
@@ -59,12 +58,6 @@ dependencies {
 	testImplementation("org.instancio:instancio-junit:$instancioVersion")
 	testImplementation("net.javacrumbs.json-unit:json-unit-assertj:$jsonUnitVersion")
 	implementation("net.datafaker:datafaker:$datafakerVersion")
-}
-
-dependencyManagement {
-	imports {
-		mavenBom("io.sentry:sentry-bom:${property("sentryVersion")}")
-	}
 }
 
 tasks.withType<Test> {
