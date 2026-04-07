@@ -1,5 +1,6 @@
 package hexlet.code.handler;
 
+import io.sentry.Sentry;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.exception.UnprocessableEntityException;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +61,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleResourceNotFoundException(ResourceNotFoundException ex) {
         log.warn("Resource not found: {}", ex.getMessage());
+        Sentry.captureException(ex);
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
@@ -67,6 +69,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ProblemDetail handleBadCredentialsException(BadCredentialsException ex) {
         log.warn("Authentication failed: {}", ex.getMessage());
+
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
@@ -74,6 +77,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UnprocessableEntityException.class)
     public ProblemDetail handleUnprocessableEntityException(UnprocessableEntityException ex) {
         log.warn("Business logic violation: {}", ex.getMessage());
+        Sentry.captureException(ex);
+
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
@@ -81,9 +86,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         log.error("Data integrity violation: {}", ex.getMessage());
+        Sentry.captureException(ex);
+
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 "Cannot delete resource: it is currently in use by other entities"
+        );
+    }
+
+    @SuppressWarnings("unused")
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleAllExceptions(Exception ex) {
+        log.error("Unexpected error: ", ex);
+        Sentry.captureException(ex);
+
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An internal server error occurred"
         );
     }
 }
