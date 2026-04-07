@@ -1,8 +1,8 @@
 package hexlet.code.handler;
 
-import io.sentry.Sentry;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.exception.UnprocessableEntityException;
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
@@ -12,6 +12,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -92,6 +93,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 "Cannot delete resource: it is currently in use by other entities"
         );
+    }
+
+    @SuppressWarnings("unused")
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDeniedException(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @SuppressWarnings("unused")
