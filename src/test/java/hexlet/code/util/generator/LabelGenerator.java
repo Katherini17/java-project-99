@@ -44,12 +44,17 @@ public class LabelGenerator {
                         Select.field(Label::getName),
                         () -> "%s_%d".formatted(faker.commerce().department(), COUNTER.getAndIncrement())
                 )
+                .lenient()
                 .toModel();
     }
 
     private Model<LabelCreateDTO> buildCreateDTO() {
         return Instancio.of(LabelCreateDTO.class)
-                .supply(Select.field(LabelCreateDTO::name), () -> faker.lorem().word())
+                .supply(
+                        Select.field(Label::getName),
+                        () -> "%s_%d".formatted(faker.commerce().department(), COUNTER.getAndIncrement())
+                )
+                .lenient()
                 .toModel();
     }
 }
