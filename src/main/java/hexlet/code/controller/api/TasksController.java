@@ -77,7 +77,10 @@ public class TasksController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Task created successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
-            @ApiResponse(responseCode = "422", description = "Unprocessable entity (invalid status or assignee reference)")
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Unprocessable entity (invalid status or assignee reference)"
+            )
     })
     @PostMapping(path = "")
     @ResponseStatus(HttpStatus.CREATED)
