@@ -1,5 +1,6 @@
 package hexlet.code.service;
 
+import hexlet.code.dto.TaskParamsDTO;
 import hexlet.code.dto.task.TaskCreateDTO;
 import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
@@ -7,6 +8,7 @@ import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.TaskMapper;
 import hexlet.code.model.Task;
 import hexlet.code.repository.TaskRepository;
+import hexlet.code.specification.TaskSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,11 +24,14 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final TaskSpecification taskSpecification;
 
     private static final String TASK_NOT_FOUND_MESSAGE = "Task with id %d not found";
 
-    public Page<TaskDTO> getAll(Pageable pageable) {
-        return taskRepository.findAll(pageable)
+    public Page<TaskDTO> getAll(TaskParamsDTO params, Pageable pageable) {
+        var specification = taskSpecification.build(params);
+
+        return taskRepository.findAll(specification, pageable)
                 .map(taskMapper::map);
     }
 
