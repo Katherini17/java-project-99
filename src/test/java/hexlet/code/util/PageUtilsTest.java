@@ -23,4 +23,15 @@ class PageUtilsTest {
             assertThat(res.getBody()).containsExactly("item1");
         });
     }
+
+    @Test
+    void testBuildPagingResponseEmptyPage() {
+        var page = new PageImpl<>(List.of());
+
+        var response = PageUtils.buildPagingResponse(page);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("0");
+        assertThat(response.getBody()).isEmpty();
+    }
 }
