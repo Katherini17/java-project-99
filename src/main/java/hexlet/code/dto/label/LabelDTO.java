@@ -12,7 +12,7 @@ public record LabelDTO(
         @Schema(example = "feature")
         String name,
 
-        @Schema(example = "2026-01-01T00:00:00Z") // 1 января 2026
+        @Schema(example = "2026-01-01T00:00:00Z")
         Instant createdAt
 ) { }
 
