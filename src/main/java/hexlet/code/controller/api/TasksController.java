@@ -1,5 +1,6 @@
 package hexlet.code.controller.api;
 
+import hexlet.code.dto.TaskParamsDTO;
 import hexlet.code.dto.task.TaskCreateDTO;
 import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -44,10 +46,11 @@ public class TasksController {
 
     private final TaskService taskService;
 
-    @Operation(summary = "Get list of tasks with pagination and sorting")
+    @Operation(summary = "Get list of tasks with pagination, sorting and filtering")
     @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully")
     @GetMapping(path = "")
     public ResponseEntity<List<TaskDTO>> index(
+            @ParameterObject TaskParamsDTO paramsDTO,
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int perPage,
             @RequestParam(defaultValue = "id") String sort,
@@ -58,7 +61,7 @@ public class TasksController {
                 perPage,
                 Sort.by(order, sort)
         );
-        Page<TaskDTO> resultPage = taskService.getAll(pageRequest);
+        Page<TaskDTO> resultPage = taskService.getAll(paramsDTO, pageRequest);
 
         return buildPagingResponse(resultPage);
     }
