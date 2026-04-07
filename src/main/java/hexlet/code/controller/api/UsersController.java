@@ -4,6 +4,9 @@ import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
 import hexlet.code.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -40,6 +43,11 @@ public class UsersController {
 
     private final UserService userService;
 
+    @Operation(summary = "Get list of all users")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of users retrieved"),
+            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)")
+    })
     @GetMapping(path = "")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> index(
@@ -58,12 +66,25 @@ public class UsersController {
         return buildPagingResponse(resultPage);
     }
 
+    @Operation(summary = "Get user details by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Owner can view)"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping(path = "/{id}")
     @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")
     public UserDTO show(@PathVariable Long id) {
         return userService.findById(id);
     }
 
+    @Operation(summary = "Create a new user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
+            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable entity (e.g. email already exists)")
+    })
     @PostMapping(path = "")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
@@ -71,6 +92,13 @@ public class UsersController {
         return userService.create(userData);
     }
 
+    @Operation(summary = "Update an existing user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
+            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Owner can update)"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PutMapping(path = "/{id}")
     @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")
     public UserDTO update(
@@ -80,6 +108,13 @@ public class UsersController {
         return userService.update(userData, id);
     }
 
+    @Operation(summary = "Delete a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "User deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Owner can delete)"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "422", description = "User is assigned to tasks and cannot be deleted")
+    })
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")

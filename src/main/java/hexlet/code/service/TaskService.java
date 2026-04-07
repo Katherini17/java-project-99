@@ -40,9 +40,10 @@ public class TaskService {
     @Transactional
     public TaskDTO create(TaskCreateDTO taskData) {
         var task = taskMapper.map(taskData);
+        var savedTask = taskRepository.save(task);
 
-        log.info("Task created: {}", task.getName());
-        return taskMapper.map(taskRepository.save(task));
+        log.info("Task created with id: {}", savedTask.getId());
+        return taskMapper.map(savedTask);
     }
 
     @Transactional
@@ -62,6 +63,9 @@ public class TaskService {
         log.info("Task with id {} deleted", id);
     }
 
+    /**
+     * Finds task with pessimistic lock for safe update/delete.
+     */
     private Task getTaskForUpdate(Long id) {
         return taskRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TASK_NOT_FOUND_MESSAGE.formatted(id)));

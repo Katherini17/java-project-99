@@ -12,6 +12,9 @@ public final class PageUtils {
 
     private static final String TOTAL_COUNT_HEADER = "X-Total-Count";
 
+    /**
+     * Wraps page content into response with X-Total-Count header for pagination support.
+     */
     public static <T> ResponseEntity<List<T>> buildPagingResponse(Page<T> page) {
 
         return ResponseEntity.ok()

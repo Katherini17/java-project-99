@@ -4,6 +4,9 @@ import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
 import hexlet.code.dto.taskstatus.TaskStatusDTO;
 import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
 import hexlet.code.service.TaskStatusService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,16 +39,30 @@ public class TaskStatusesController {
 
     private final TaskStatusService taskStatusService;
 
+    @Operation(summary = "Get list of all task statuses")
+    @ApiResponse(responseCode = "200", description = "List of statuses retrieved successfully")
     @GetMapping("")
     public ResponseEntity<List<TaskStatusDTO>> index() {
         return buildPagingResponse(taskStatusService.getAll(Pageable.unpaged()));
     }
 
+    @Operation(summary = "Get task status details by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Status found"),
+            @ApiResponse(responseCode = "404", description = "Status not found")
+    })
     @GetMapping("/{id}")
     public TaskStatusDTO show(@PathVariable Long id) {
         return taskStatusService.findById(id);
     }
 
+    @Operation(summary = "Create a new task status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Status created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
+            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable entity (e.g. non-unique slug)")
+    })
     @PostMapping("")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,6 +70,13 @@ public class TaskStatusesController {
         return taskStatusService.create(taskStatusData);
     }
 
+    @Operation(summary = "Update an existing task status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Status updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
+            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
+            @ApiResponse(responseCode = "404", description = "Status not found")
+    })
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public TaskStatusDTO update(
@@ -62,6 +86,13 @@ public class TaskStatusesController {
         return taskStatusService.update(taskStatusData, id);
     }
 
+    @Operation(summary = "Delete a task status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Status deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
+            @ApiResponse(responseCode = "404", description = "Status not found"),
+            @ApiResponse(responseCode = "422", description = "Status is in use and cannot be deleted")
+    })
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('ADMIN')")

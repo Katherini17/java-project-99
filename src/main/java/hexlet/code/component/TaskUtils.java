@@ -10,6 +10,10 @@ public class TaskUtils {
 
     private final TaskRepository taskRepository;
 
+    /**
+     * Checks if the user with the given email is the assignee of the task.
+     * Used for security checks in controllers.
+     */
     public boolean isAssignee(Long taskId, String email) {
         return taskRepository.findById(taskId)
                 .map(task -> {

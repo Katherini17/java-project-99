@@ -60,6 +60,9 @@ public class UserService {
         return userMapper.map(user);
     }
 
+    /**
+     * Updates an existing user and encrypts the password if provided.
+     */
     @Transactional
     public UserDTO update(UserUpdateDTO userData, Long id) {
         var user = getUserForUpdate(id);
@@ -74,18 +77,25 @@ public class UserService {
         return userMapper.map(userRepository.save(user));
     }
 
+    /**
+     * Deletes user if they are not assigned to any tasks.
+     * @throws UnprocessableEntityException if user has active tasks.
+     */
     @Transactional
     public void delete(Long id) {
-        var task = getUserForUpdate(id);
+        var user = getUserForUpdate(id);
 
         if (taskRepository.existsByAssigneeId(id)) {
             throw new UnprocessableEntityException(USER_LINKED_MESSAGE);
         }
 
-        userRepository.delete(task);
+        userRepository.delete(user);
         log.info("User with id {} deleted", id);
     }
 
+    /**
+     * Finds user with pessimistic lock for safe update/delete.
+     */
     private User getUserForUpdate(Long id) {
         return userRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE.formatted(id)));

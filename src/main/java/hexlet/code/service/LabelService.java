@@ -44,9 +44,10 @@ public class LabelService {
     @Transactional
     public LabelDTO create(LabelCreateDTO labelData) {
         var label = labelMapper.map(labelData);
+        var savedLabel = labelRepository.save(label);
 
-        log.info("Label created: {}", label.getName());
-        return labelMapper.map(labelRepository.save(label));
+        log.info("Label created with id: {}", savedLabel.getId());
+        return labelMapper.map(savedLabel);
     }
 
     @Transactional
@@ -58,11 +59,16 @@ public class LabelService {
         return labelMapper.map(labelRepository.save(label));
     }
 
+    /**
+     * Deletes label if it is not linked to any tasks.
+     * @throws UnprocessableEntityException if label is in use.
+     */
     @Transactional
     public void delete(Long id) {
         var label = getLabelForUpdate(id);
 
         if (taskRepository.existsByLabelsId(id)) {
+            log.warn("Failed to delete label with id {}: linked to tasks", id);
             throw new UnprocessableEntityException(LABEL_LINKED_MESSAGE);
         }
 
@@ -70,6 +76,9 @@ public class LabelService {
         log.info("Label with id {} deleted", id);
     }
 
+    /**
+     * Finds label with pessimistic lock for safe update/delete.
+     */
     private Label getLabelForUpdate(Long id) {
         return labelRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(LABEL_NOT_FOUND_MESSAGE.formatted(id)));

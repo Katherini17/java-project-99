@@ -4,6 +4,9 @@ import hexlet.code.dto.task.TaskCreateDTO;
 import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
 import hexlet.code.service.TaskService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -41,6 +44,8 @@ public class TasksController {
 
     private final TaskService taskService;
 
+    @Operation(summary = "Get list of tasks with pagination and sorting")
+    @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully")
     @GetMapping(path = "")
     public ResponseEntity<List<TaskDTO>> index(
             @RequestParam(defaultValue = "1") @Min(1) int page,
@@ -58,17 +63,35 @@ public class TasksController {
         return buildPagingResponse(resultPage);
     }
 
+    @Operation(summary = "Get task details by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task found"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
+    })
     @GetMapping(path = "/{id}")
     public TaskDTO show(@PathVariable Long id) {
         return taskService.findById(id);
     }
 
+    @Operation(summary = "Create a new task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Task created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
+            @ApiResponse(responseCode = "422", description = "Unprocessable entity (invalid status or assignee reference)")
+    })
     @PostMapping(path = "")
     @ResponseStatus(HttpStatus.CREATED)
     public TaskDTO create(@RequestBody @Valid TaskCreateDTO taskData) {
         return taskService.create(taskData);
     }
 
+    @Operation(summary = "Update an existing task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
+            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Assignee can update)"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
+    })
     @PutMapping(path = "/{id}")
     @PreAuthorize("hasRole('ADMIN') or @taskUtils.isAssignee(#id, authentication.name)")
     public TaskDTO update(
@@ -78,6 +101,12 @@ public class TasksController {
         return taskService.update(taskData, id);
     }
 
+    @Operation(summary = "Delete a task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Assignee can delete)"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
+    })
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('ADMIN') or @taskUtils.isAssignee(#id, authentication.name)")

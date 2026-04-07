@@ -45,9 +45,10 @@ public class TaskStatusService {
     @Transactional
     public TaskStatusDTO create(TaskStatusCreateDTO taskStatusData) {
         var taskStatus = taskStatusMapper.map(taskStatusData);
+        var savedStatus = taskStatusRepository.save(taskStatus);
 
-        log.info("Task status created: {}", taskStatus.getName());
-        return taskStatusMapper.map(taskStatusRepository.save(taskStatus));
+        log.info("Task status created with id: {}", savedStatus.getId());
+        return taskStatusMapper.map(savedStatus);
     }
 
     @Transactional
@@ -59,6 +60,10 @@ public class TaskStatusService {
         return taskStatusMapper.map(taskStatusRepository.save(taskStatus));
     }
 
+    /**
+     * Deletes task status if it is not assigned to any tasks.
+     * @throws UnprocessableEntityException if status is in use.
+     */
     @Transactional
     public void delete(Long id) {
         var taskStatus = getStatusForUpdate(id);
@@ -71,6 +76,10 @@ public class TaskStatusService {
         log.info("Task status with id {} deleted", id);
     }
 
+
+    /**
+     * Finds status with pessimistic lock for safe update/delete.
+     */
     private TaskStatus getStatusForUpdate(Long id) {
         return taskStatusRepository.findWithLockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TASK_STATUS_NOT_FOUND_MESSAGE.formatted(id)));

@@ -3,6 +3,9 @@ package hexlet.code.model;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Predefined task statuses used for automatic database initialization.
+ */
 @Getter
 @AllArgsConstructor
 public enum TaskStatusEnum {

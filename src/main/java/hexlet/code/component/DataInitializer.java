@@ -1,6 +1,7 @@
 package hexlet.code.component;
 
 import hexlet.code.model.Label;
+import hexlet.code.model.LabelEnum;
 import hexlet.code.model.Role;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.TaskStatusEnum;
@@ -18,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 
+/**
+ * Initializer for default application data: admin user, task statuses, and labels.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -37,10 +41,13 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        log.info("--- Starting database initialization ---");
+
         initializeAdmin();
         initializeTaskStatuses();
         initializeLabels();
 
+        log.info("--- Database initialization finished ---");
     }
 
     private void initializeAdmin() {

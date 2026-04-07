@@ -1,8 +1,11 @@
-package hexlet.code.component;
+package hexlet.code.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Predefined labels used for automatic database initialization.
+ */
 @Getter
 @AllArgsConstructor
 public enum LabelEnum {
