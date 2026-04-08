@@ -32,10 +32,10 @@ import java.security.interfaces.RSAPublicKey;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.public-key-location:classpath:certs/public.pem}")
+    @Value("${spring.security.oauth2.resourceserver.jwt.public-key-location}")
     private RSAPublicKey publicKey;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.private-key-location:classpath:certs/private.pem}")
+    @Value("${spring.security.oauth2.resourceserver.jwt.private-key-location}")
     private RSAPrivateKey privateKey;
 
     @Bean
