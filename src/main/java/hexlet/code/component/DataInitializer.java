@@ -32,10 +32,10 @@ public class DataInitializer implements CommandLineRunner {
     private final TaskStatusRepository taskStatusRepository;
     private final LabelRepository labelRepository;
 
-    @Value("${ADMIN_EMAIL}")
+    @Value("${config.admin.email:hexlet@example.com}")
     private String adminEmail;
 
-    @Value("${ADMIN_PASSWORD}")
+    @Value("${config.admin.password:qwerty}")
     private String adminPassword;
 
     @Override
