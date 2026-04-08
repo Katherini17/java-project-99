@@ -21,8 +21,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          public-key-location: classpath:certs/public.pem
-          private-key-location: classpath:certs/private.pem
+          public-key-location: ${JWT_PUBLIC_KEY_PATH:classpath:certs/public.pem}
+          private-key-location: ${JWT_PRIVATE_KEY_PATH:classpath:certs/private.pem}
+
 
 logging:
   level:
