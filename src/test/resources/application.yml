@@ -4,7 +4,9 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
-
-rsa:
-  private-key: ${JWT_PRIVATE_KEY_VALUE:classpath:certs/private.pem}
-  public-key: ${JWT_PUBLIC_KEY_VALUE:classpath:certs/public.pem}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:certs/public.pem
+          private-key-location: classpath:certs/private.pem
