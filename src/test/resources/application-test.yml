@@ -1,0 +1,19 @@
+spring:
+  profiles:
+    active: test
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+sentry:
+  enabled: false
+
+ADMIN_EMAIL: hexlet@example.com
+ADMIN_PASSWORD: qwerty
+
+rsa:
+  private-key: classpath:certs/private.pem
+  public-key: classpath:certs/public.pem
