@@ -14,6 +14,9 @@ spring:
         jdbc.batch_size: 10
         format_sql: true
         use_sql_comments: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
 
 rsa:
   private-key: ${JWT_PRIVATE_KEY_VALUE:classpath:certs/private.pem}
