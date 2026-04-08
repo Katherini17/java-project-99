@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: test
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -11,8 +9,10 @@ spring:
 sentry:
   enabled: false
 
-ADMIN_EMAIL: hexlet@example.com
-ADMIN_PASSWORD: qwerty
+config:
+  admin:
+    email: hexlet@example.com
+    password: qwerty
 
 rsa:
   private-key: classpath:certs/private.pem
