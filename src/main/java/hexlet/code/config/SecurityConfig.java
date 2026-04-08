@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -18,19 +17,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 
 @Configuration
 @EnableWebSecurity
@@ -38,35 +32,19 @@ import java.security.spec.X509EncodedKeySpec;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.public-key-location}")
-    private Resource publicKeyResource;
+    @Value("${spring.security.oauth2.resourceserver.jwt.public-key-location:classpath:certs/public.pem}")
+    private RSAPublicKey publicKey;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.private-key-location}")
-    private Resource privateKeyResource;
-
-    // Нам нужно явно создать JwtDecoder, раз мы ушли от полной магии
-    @Bean
-    public JwtDecoder jwtDecoder() throws Exception {
-        return NimbusJwtDecoder.withPublicKey(publicKey()).build();
-    }
+    @Value("${spring.security.oauth2.resourceserver.jwt.private-key-location:classpath:certs/private.pem}")
+    private RSAPrivateKey privateKey;
 
     @Bean
-    public JwtEncoder jwtEncoder() throws Exception {
-        var jwk = new RSAKey.Builder(publicKey()).privateKey(privateKey()).build();
+    public JwtEncoder jwtEncoder() {
+        var jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
         var jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwks);
     }
 
-    // Хелперы для чтения ключей из Resource
-    private RSAPublicKey publicKey() throws Exception {
-        return (RSAPublicKey) KeyFactory.getInstance("RSA")
-                .generatePublic(new X509EncodedKeySpec(publicKeyResource.getContentAsByteArray()));
-    }
-
-    private RSAPrivateKey privateKey() throws Exception {
-        return (RSAPrivateKey) KeyFactory.getInstance("RSA")
-                .generatePrivate(new PKCS8EncodedKeySpec(privateKeyResource.getContentAsByteArray()));
-    }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
