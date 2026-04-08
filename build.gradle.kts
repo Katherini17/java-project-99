@@ -2,7 +2,7 @@ plugins {
 	application
 	checkstyle
 	jacoco
-	id("org.springframework.boot") version "3.5.13"
+	id("org.springframework.boot") version "3.4.4"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("com.github.ben-manes.versions") version "0.53.0"
 	id("org.sonarqube") version "7.2.3.7755"
@@ -19,8 +19,7 @@ val jacksonNullableVersion = "0.2.9"
 val instancioVersion = "6.0.0-RC2"
 val datafakerVersion = "2.5.4"
 val jsonUnitVersion = "5.1.1"
-val springdocVersion = "2.8.16"
-val commonsLangVersion = "3.18.0"
+val springdocVersion = "2.8.4"
 val sentryVersion = "8.27.0"
 
 java {
@@ -42,7 +41,6 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 	implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	implementation("org.apache.commons:commons-lang3:${commonsLangVersion}")
 
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql")
