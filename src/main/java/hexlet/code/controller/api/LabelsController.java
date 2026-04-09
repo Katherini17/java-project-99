@@ -77,11 +77,9 @@ public class LabelsController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Label updated successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
-            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
             @ApiResponse(responseCode = "404", description = "Label not found")
     })
     @PutMapping(path = "/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public LabelDTO update(
             @RequestBody @Valid LabelUpdateDTO labelData,
             @PathVariable Long id
@@ -92,13 +90,11 @@ public class LabelsController {
     @Operation(summary = "Delete a label")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Label deleted successfully"),
-            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
             @ApiResponse(responseCode = "404", description = "Label not found"),
             @ApiResponse(responseCode = "422", description = "Label is in use and cannot be deleted")
     })
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
     public void destroy(@PathVariable Long id) {
         labelService.delete(id);
     }
