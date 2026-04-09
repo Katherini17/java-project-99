@@ -40,22 +40,23 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 	implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+	implementation("org.mapstruct:mapstruct:${mapstructVersion}")
+	implementation("org.openapitools:jackson-databind-nullable:${jacksonNullableVersion}")
+	implementation("net.datafaker:datafaker:${datafakerVersion}")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql")
 
-	implementation("org.mapstruct:mapstruct:$mapstructVersion")
 	annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
 	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:$lombokMapstructBindingVersion")
-	implementation("org.openapitools:jackson-databind-nullable:$jacksonNullableVersion")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("org.instancio:instancio-junit:$instancioVersion")
 	testImplementation("net.javacrumbs.json-unit:json-unit-assertj:$jsonUnitVersion")
-	implementation("net.datafaker:datafaker:$datafakerVersion")
+
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
