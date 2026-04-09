@@ -39,6 +39,7 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequestMapping("/api/users")
 @Validated
 @Tag(name = "Users", description = "User management and registration")
+@PreAuthorize("isAuthenticated()")
 @ApiResponses(value = {
         @ApiResponse(responseCode = "401", description = "Unauthorized")
 })
@@ -49,10 +50,8 @@ public class UsersController {
     @Operation(summary = "Get list of all users")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of users retrieved"),
-            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)")
     })
     @GetMapping(path = "")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> index(
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int perPage,
@@ -72,11 +71,9 @@ public class UsersController {
     @Operation(summary = "Get user details by ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User found"),
-            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Owner can view)"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping(path = "/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userUtils.isOwner(#id, authentication.name)")
     public UserDTO show(@PathVariable Long id) {
         return userService.findById(id);
     }
@@ -90,7 +87,6 @@ public class UsersController {
     })
     @PostMapping(path = "")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
     public UserDTO create(@RequestBody @Valid UserCreateDTO userData) {
         return userService.create(userData);
     }
@@ -99,7 +95,6 @@ public class UsersController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User updated successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
-            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Owner can update)"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PutMapping(path = "/{id}")
