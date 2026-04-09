@@ -184,17 +184,6 @@ class LabelControllerTest {
             );
         }
 
-//        @Test
-//        void updateWithoutAdmin() throws Exception {
-//            var dto = new LabelUpdateDTO(JsonNullable.of("New Name"));
-//
-//            mockMvc.perform(put(ID_URL, testLabel.getId())
-//                            .with(jwt())
-//                            .contentType(MediaType.APPLICATION_JSON)
-//                            .content(objectMapper.writeValueAsString(dto)))
-//                    .andExpect(status().isForbidden());
-//        }
-
         @Test
         void updateWithInvalidData() throws Exception {
             var dto = Instancio.of(labelGenerator.getUpdateDTO())
@@ -223,15 +212,6 @@ class LabelControllerTest {
 
             assertThat(labelRepository.existsById(testLabel.getId())).isFalse();
         }
-
-//        @Test
-//        void destroyWithoutAdmin() throws Exception {
-//            mockMvc.perform(delete(ID_URL, testLabel.getId())
-//                            .with(jwt()))
-//                    .andExpect(status().isForbidden());
-//
-//            assertThat(labelRepository.existsById(testLabel.getId())).isTrue();
-//        }
 
         @Test
         void destroyLinkedLabel() throws Exception {

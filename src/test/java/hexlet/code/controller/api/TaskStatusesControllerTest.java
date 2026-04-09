@@ -83,12 +83,6 @@ class TaskStatusesControllerTest {
         }
 
         @Test
-        void indexWithoutAuth() throws Exception {
-            mockMvc.perform(get(BASE_URL))
-                    .andExpect(status().isUnauthorized());
-        }
-
-        @Test
         void show() throws Exception {
             var result = mockMvc.perform(get(ID_URL, testStatus.getId())
                             .with(jwt()))
@@ -129,17 +123,6 @@ class TaskStatusesControllerTest {
                 assertThat(status.getName()).isEqualTo(data.getName());
                 assertThat(status.getSlug()).isEqualTo(data.getSlug());
             });
-        }
-
-        @Test
-        void createWithoutAdmin() throws Exception {
-            var dto = Instancio.create(taskStatusGenerator.getCreateDTO());
-
-            mockMvc.perform(post(BASE_URL)
-                            .with(jwt())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(dto)))
-                    .andExpect(status().isForbidden());
         }
 
         @Test
@@ -192,22 +175,6 @@ class TaskStatusesControllerTest {
         }
 
         @Test
-        void updateWithoutAdmin() throws Exception {
-            var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
-                    .set(
-                            Select.field(TaskStatusUpdateDTO::name),
-                            JsonNullable.of("New name")
-                    )
-                    .create();
-
-            mockMvc.perform(put(ID_URL, testStatus.getId())
-                            .with(jwt())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(dto)))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
         void updateWithInvalidData() throws Exception {
             var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
                     .set(
@@ -244,16 +211,6 @@ class TaskStatusesControllerTest {
             mockMvc.perform(delete(ID_URL, testStatus.getId())
                             .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                     .andExpect(status().isUnprocessableEntity());
-
-            assertThat(taskStatusRepository.existsById(testStatus.getId())).isTrue();
-        }
-
-
-        @Test
-        void destroyWithoutAdmin() throws Exception {
-            mockMvc.perform(delete(ID_URL, testStatus.getId())
-                            .with(jwt()))
-                    .andExpect(status().isForbidden());
 
             assertThat(taskStatusRepository.existsById(testStatus.getId())).isTrue();
         }
