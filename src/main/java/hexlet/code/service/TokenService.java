@@ -3,6 +3,7 @@ package hexlet.code.service;
 import hexlet.code.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -19,9 +20,12 @@ public class TokenService {
 
     private final JwtEncoder encoder;
 
+    @Value("${jwt.exp-minutes:60}")
+    private int expirationMinutes;
+
     /**
      * Generates a JWT token for the authenticated user.
-     * The token includes the user's role in the 'scope' claim and is valid for 15 minutes.
+     * The token includes the user's role in the 'scope' claim and has a configurable expiration time.
      * @param authentication the authentication object containing user details
      * @return a signed JWT token string
      */
@@ -34,7 +38,7 @@ public class TokenService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
-                .expiresAt(now.plus(15, ChronoUnit.MINUTES))
+                .expiresAt(now.plus(expirationMinutes, ChronoUnit.MINUTES))
                 .claim("scope", scope)
                 .subject(authentication.getName())
                 .build();

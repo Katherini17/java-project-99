@@ -1,19 +1,7 @@
 spring:
-  mvc:
-    pathmatch:
-      matching-strategy: ant_path_matcher
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
 
 sentry:
   enabled: false
-
-config:
-  admin:
-    email: hexlet@example.com
-    password: qwerty
-
-rsa:
-  private-key: classpath:certs/private.pem
-  public-key: classpath:certs/public.pem

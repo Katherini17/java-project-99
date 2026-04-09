@@ -2,7 +2,7 @@ spring:
   application:
     name: app
   profiles:
-    active: development
+    active: ${SPRING_PROFILES_ACTIVE:development}
   jackson:
     default-property-inclusion: non-null
   jpa:
@@ -17,6 +17,9 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+
+jwt:
+  exp-minutes: 60
 
 rsa:
   private-key: ${JWT_PRIVATE_KEY_VALUE:classpath:certs/private.pem}
