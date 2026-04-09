@@ -111,12 +111,10 @@ public class TasksController {
     @Operation(summary = "Delete a task")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
-            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Assignee can delete)"),
             @ApiResponse(responseCode = "404", description = "Task not found")
     })
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN') or @taskUtils.isAssignee(#id, authentication.name)")
     public void destroy(@PathVariable Long id) {
         taskService.delete(id);
     }
