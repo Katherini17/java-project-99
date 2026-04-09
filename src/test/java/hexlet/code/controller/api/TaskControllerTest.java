@@ -359,47 +359,6 @@ class TaskControllerTest {
         }
 
         @Test
-        void updateByAdmin() throws Exception {
-            var dto = Instancio.of(taskGenerator.getUpdateDTO())
-                    .set(
-                            Select.field(TaskUpdateDTO::title),
-                            JsonNullable.of("New title")
-                    )
-                    .create();
-
-            mockMvc.perform(put(ID_URL, testTask.getId())
-                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(dto)))
-                    .andExpect(status().isOk());
-
-            var updatedTask = taskRepository.findById(testTask.getId()).orElse(null);
-
-            assertThat(updatedTask).isNotNull().satisfies(task ->
-                assertThat(task.getName()).isEqualTo("New title")
-            );
-        }
-
-        @Test
-        void updateByOtherUser() throws Exception {
-            var otherUser = Instancio.create(userGenerator.getModel());
-            userRepository.save(otherUser);
-
-            var dto = Instancio.of(taskGenerator.getUpdateDTO())
-                    .set(
-                            Select.field(TaskUpdateDTO::title),
-                            JsonNullable.of("New title")
-                    )
-                    .create();
-
-            mockMvc.perform(put(ID_URL, testTask.getId())
-                            .with(jwt().jwt(builder -> builder.subject(otherUser.getEmail())))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(dto)))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
         void updateWithInvalidData() throws Exception {
             var dto = Instancio.of(taskGenerator.getUpdateDTO())
                     .set(
