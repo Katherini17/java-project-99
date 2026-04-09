@@ -98,11 +98,9 @@ public class TasksController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Task updated successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
-            @ApiResponse(responseCode = "403", description = "Access denied (Only ADMIN or Assignee can update)"),
             @ApiResponse(responseCode = "404", description = "Task not found")
     })
     @PutMapping(path = "/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @taskUtils.isAssignee(#id, authentication.name)")
     public TaskDTO update(
             @RequestBody @Valid TaskUpdateDTO taskData,
             @PathVariable Long id
