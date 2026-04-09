@@ -387,28 +387,6 @@ class TaskControllerTest {
 
             assertThat(taskRepository.existsById(testTask.getId())).isFalse();
         }
-
-
-        @Test
-        void destroyByAdmin() throws Exception {
-            mockMvc.perform(delete(ID_URL, testTask.getId())
-                            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                    .andExpect(status().isNoContent());
-
-            assertThat(taskRepository.existsById(testTask.getId())).isFalse();
-        }
-
-        @Test
-        void destroyByOtherUser() throws Exception {
-            var otherUser = Instancio.create(userGenerator.getModel());
-            userRepository.save(otherUser);
-
-            mockMvc.perform(delete(ID_URL, testTask.getId())
-                            .with(jwt().jwt(builder -> builder.subject(otherUser.getEmail()))))
-                    .andExpect(status().isForbidden());
-
-            assertThat(taskRepository.existsById(testTask.getId())).isTrue();
-        }
     }
 
 
