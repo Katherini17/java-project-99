@@ -63,12 +63,10 @@ public class TaskStatusesController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Status created successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
-            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
             @ApiResponse(responseCode = "422", description = "Unprocessable entity (e.g. non-unique slug)")
     })
     @PostMapping("")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
     public TaskStatusDTO create(@RequestBody @Valid TaskStatusCreateDTO taskStatusData) {
         return taskStatusService.create(taskStatusData);
     }
@@ -77,11 +75,9 @@ public class TaskStatusesController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Status updated successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request (validation failed)"),
-            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
             @ApiResponse(responseCode = "404", description = "Status not found")
     })
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public TaskStatusDTO update(
             @RequestBody @Valid TaskStatusUpdateDTO taskStatusData,
             @PathVariable Long id
@@ -92,13 +88,11 @@ public class TaskStatusesController {
     @Operation(summary = "Delete a task status")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Status deleted successfully"),
-            @ApiResponse(responseCode = "403", description = "Access denied (ADMIN role required)"),
             @ApiResponse(responseCode = "404", description = "Status not found"),
             @ApiResponse(responseCode = "422", description = "Status is in use and cannot be deleted")
     })
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
     public void destroy(@PathVariable Long id) {
         taskStatusService.delete(id);
     }
