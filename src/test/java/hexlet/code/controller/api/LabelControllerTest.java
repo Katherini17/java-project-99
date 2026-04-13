@@ -1,9 +1,12 @@
 package hexlet.code.controller.api;
 
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.label.LabelCreateDTO;
+import hexlet.code.dto.label.LabelDTO;
 import hexlet.code.dto.label.LabelUpdateDTO;
+import hexlet.code.mapper.LabelMapper;
 import hexlet.code.model.Label;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
@@ -26,7 +29,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -65,6 +69,9 @@ class LabelControllerTest {
     @Autowired
     private TaskStatusGenerator taskStatusGenerator;
 
+    @Autowired
+    private LabelMapper  labelMapper;
+
     private Label testLabel;
 
     private static final String BASE_URL = "/api/labels";
@@ -72,6 +79,10 @@ class LabelControllerTest {
 
     @BeforeEach
     void setUp() {
+        taskRepository.deleteAll();
+        labelRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+
         testLabel = Instancio.create(labelGenerator.getModel());
         labelRepository.save(testLabel);
     }
@@ -90,7 +101,13 @@ class LabelControllerTest {
                     .andReturn();
 
             var body = result.getResponse().getContentAsString();
-            assertThatJson(body).isArray();
+
+            List<LabelDTO> actualDtos = objectMapper.readValue(body, new TypeReference<>() { });
+            var expectedDtos = labelRepository.findAll().stream()
+                    .map(labelMapper::map)
+                    .toList();
+
+            assertThat(actualDtos).containsExactlyInAnyOrderElementsOf(expectedDtos);
         }
 
         @Test
@@ -102,10 +119,14 @@ class LabelControllerTest {
 
             var body = result.getResponse().getContentAsString();
 
-            assertThatJson(body).and(
-                    v -> v.node("id").isEqualTo(testLabel.getId()),
-                    v -> v.node("name").isEqualTo(testLabel.getName())
-            );
+            var actualDto = objectMapper.readValue(body, LabelDTO.class);
+
+            var expectedLabel = labelRepository.findById(testLabel.getId()).orElseThrow();
+
+            assertThat(actualDto).isNotNull().satisfies(dto -> {
+                assertThat(dto.id()).isEqualTo(expectedLabel.getId());
+                assertThat(dto.name()).isEqualTo(expectedLabel.getName());
+            });
         }
 
         @Test
@@ -121,7 +142,7 @@ class LabelControllerTest {
         @Test
         void create() throws Exception {
             Label data = Instancio.create(labelGenerator.getModel());
-            LabelCreateDTO dto = toCreateDTO(data);
+            LabelCreateDTO dto = toCreateDto(data);
 
             mockMvc.perform(post(BASE_URL)
                             .with(jwt())
@@ -129,7 +150,7 @@ class LabelControllerTest {
                             .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated());
 
-            Label createdLabel = labelRepository.findByName(data.getName())
+            var createdLabel = labelRepository.findByName(data.getName())
                     .orElse(null);
 
             assertThat(createdLabel).isNotNull().satisfies(label ->
@@ -139,7 +160,7 @@ class LabelControllerTest {
 
         @Test
         void createWithoutAuth() throws Exception {
-            var data = Instancio.create(labelGenerator.getCreateDTO());
+            var data = Instancio.create(labelGenerator.getCreateDto());
 
             mockMvc.perform(post(BASE_URL)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -163,9 +184,10 @@ class LabelControllerTest {
     class UpdateLabel {
         @Test
         void update() throws Exception {
-            var dto = Instancio.of(labelGenerator.getUpdateDTO())
+            var dto = Instancio.of(labelGenerator.getUpdateDto())
                     .set(
-                            Select.field(LabelUpdateDTO::name),
+                            Select.field(LabelUpdateDTO
+                                    ::name),
                             JsonNullable.of("New name")
                     )
                     .create();
@@ -186,7 +208,7 @@ class LabelControllerTest {
 
         @Test
         void updateWithInvalidData() throws Exception {
-            var dto = Instancio.of(labelGenerator.getUpdateDTO())
+            var dto = Instancio.of(labelGenerator.getUpdateDto())
                     .set(
                             Select.field(LabelUpdateDTO::name),
                             JsonNullable.of("")
@@ -231,7 +253,7 @@ class LabelControllerTest {
         }
     }
 
-    private LabelCreateDTO toCreateDTO(Label model) {
+    private LabelCreateDTO toCreateDto(Label model) {
         return new LabelCreateDTO(model.getName());
     }
 }

@@ -1,8 +1,11 @@
 package hexlet.code.controller.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.task.TaskCreateDTO;
+import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
+import hexlet.code.mapper.TaskMapper;
 import hexlet.code.model.Label;
 import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
@@ -39,7 +42,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -87,6 +89,9 @@ class TaskControllerTest {
     @Autowired
     private LabelGenerator labelGenerator;
 
+    @Autowired
+    private TaskMapper taskMapper;
+
     private Task testTask;
     private User testAssignee;
     private TaskStatus testStatus;
@@ -98,6 +103,11 @@ class TaskControllerTest {
 
     @BeforeEach
     void setUp() {
+        taskRepository.deleteAll();
+        labelRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
+
         testAssignee = Instancio.create(userGenerator.getModel());
         userRepository.save(testAssignee);
 
@@ -119,6 +129,7 @@ class TaskControllerTest {
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class GetTasks {
+
         @Test
         void index() throws Exception {
             long expectedCount = taskRepository.count();
@@ -129,7 +140,13 @@ class TaskControllerTest {
                     .andReturn();
 
             var body = result.getResponse().getContentAsString();
-            assertThatJson(body).isArray();
+
+            List<TaskDTO> actualDtos = objectMapper.readValue(body, new TypeReference<>() { });
+            var expectedDtos = taskRepository.findAll().stream()
+                    .map(taskMapper::map)
+                    .toList();
+
+            assertThat(actualDtos).containsExactlyInAnyOrderElementsOf(expectedDtos);
         }
 
         private Stream<String> filterKeyProvider() {
@@ -171,13 +188,16 @@ class TaskControllerTest {
                     .andReturn();
             var body = result.getResponse().getContentAsString();
 
-            assertThatJson(body).and(
-                    v -> v.node("id").isEqualTo(testTask.getId()),
-                    v -> v.node("title").isEqualTo(testTask.getName()),
-                    v -> v.node("status").isEqualTo(testStatus.getSlug()),
-                    v -> v.node("assignee_id").isEqualTo(testAssignee.getId()),
-                    v -> v.node("index").isEqualTo(testTask.getIndex())
-            );
+            var actualDto = objectMapper.readValue(body, TaskDTO.class);
+            var expectedTask = taskRepository.findById(testTask.getId()).orElseThrow();
+
+            assertThat(actualDto).isNotNull().satisfies(dto -> {
+                assertThat(dto.id()).isEqualTo(expectedTask.getId());
+                assertThat(dto.title()).isEqualTo(expectedTask.getName());
+                assertThat(dto.status()).isEqualTo(expectedTask.getTaskStatus().getSlug());
+                assertThat(dto.assigneeId()).isEqualTo(expectedTask.getAssignee().getId());
+                assertThat(dto.index()).isEqualTo(expectedTask.getIndex());
+            });
         }
 
         @Test
@@ -194,7 +214,7 @@ class TaskControllerTest {
             Task data = Instancio.create(taskGenerator.getModel());
             data.setTaskStatus(testStatus);
             data.setAssignee(testAssignee);
-            TaskCreateDTO dto = toCreateDTO(data);
+            TaskCreateDTO dto = toCreateDto(data);
 
             var result = mockMvc.perform(post(BASE_URL)
                             .with(jwt())
@@ -225,7 +245,7 @@ class TaskControllerTest {
         void createWithLabels() throws Exception {
             Long labelId = testLabel1.getId();
 
-            var dto = Instancio.of(taskGenerator.getCreateDTO())
+            var dto = Instancio.of(taskGenerator.getCreateDto())
                     .set(Select.field(TaskCreateDTO::status), testStatus.getSlug())
                     .set(Select.field(TaskCreateDTO::taskLabelIds), Set.of(labelId))
                     .create();
@@ -254,7 +274,7 @@ class TaskControllerTest {
 
         @Test
         void createWithoutAuth() throws Exception {
-            var data = Instancio.create(taskGenerator.getCreateDTO());
+            var data = Instancio.create(taskGenerator.getCreateDto());
 
             mockMvc.perform(post(BASE_URL)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -264,7 +284,7 @@ class TaskControllerTest {
 
         @Test
         void createWithInvalidData() throws Exception {
-            var dto = Instancio.of(taskGenerator.getCreateDTO())
+            var dto = Instancio.of(taskGenerator.getCreateDto())
                     .set(Select.field(TaskCreateDTO::status), null)
                     .create();
 
@@ -280,7 +300,7 @@ class TaskControllerTest {
     class UpdateTask {
         @Test
         void update() throws Exception {
-            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+            var dto = Instancio.of(taskGenerator.getUpdateDto())
                     .set(
                             Select.field(TaskUpdateDTO::title),
                             JsonNullable.of("New title")
@@ -314,7 +334,7 @@ class TaskControllerTest {
             var newLabel = Instancio.create(labelGenerator.getModel());
             labelRepository.save(newLabel);
 
-            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+            var dto = Instancio.of(taskGenerator.getUpdateDto())
                     .set(
                             Select.field(TaskUpdateDTO::taskLabelIds),
                             JsonNullable.of(Set.of(newLabel.getId()))
@@ -338,7 +358,7 @@ class TaskControllerTest {
 
         @Test
         void updateClearLabels() throws Exception {
-            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+            var dto = Instancio.of(taskGenerator.getUpdateDto())
                     .set(Select.field(
                             TaskUpdateDTO::taskLabelIds),
                             JsonNullable.of(Set.of())
@@ -360,7 +380,7 @@ class TaskControllerTest {
 
         @Test
         void updateWithInvalidData() throws Exception {
-            var dto = Instancio.of(taskGenerator.getUpdateDTO())
+            var dto = Instancio.of(taskGenerator.getUpdateDto())
                     .set(
                             Select.field(TaskUpdateDTO::title),
                             JsonNullable.of("")
@@ -390,7 +410,7 @@ class TaskControllerTest {
     }
 
 
-    private TaskCreateDTO toCreateDTO(Task data) {
+    private TaskCreateDTO toCreateDto(Task data) {
         Set<Long> labelIds = data.getLabels()
                 .stream()
                 .map(Label::getId)

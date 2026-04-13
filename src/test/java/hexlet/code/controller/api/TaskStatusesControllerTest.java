@@ -1,8 +1,11 @@
 package hexlet.code.controller.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
+import hexlet.code.dto.taskstatus.TaskStatusDTO;
 import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
+import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
@@ -21,9 +24,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -33,7 +36,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Transactional
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -56,6 +58,9 @@ class TaskStatusesControllerTest {
     @Autowired
     private TaskGenerator taskGenerator;
 
+    @Autowired
+    private TaskStatusMapper taskStatusMapper;
+
     private TaskStatus testStatus;
 
     private static final String BASE_URL = "/api/task_statuses";
@@ -63,6 +68,9 @@ class TaskStatusesControllerTest {
 
     @BeforeEach
     void setUp() {
+        taskRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+
         testStatus = Instancio.create(taskStatusGenerator.getModel());
         taskStatusRepository.save(testStatus);
     }
@@ -79,7 +87,13 @@ class TaskStatusesControllerTest {
                     .andReturn();
 
             var body = result.getResponse().getContentAsString();
-            assertThatJson(body).isArray();
+
+            List<TaskStatusDTO> actualDtos = objectMapper.readValue(body, new TypeReference<>() { });
+            var expectedDtos = taskStatusRepository.findAll().stream()
+                    .map(taskStatusMapper::map)
+                    .toList();
+
+            assertThat(actualDtos).containsExactlyInAnyOrderElementsOf(expectedDtos);
         }
 
         @Test
@@ -88,12 +102,16 @@ class TaskStatusesControllerTest {
                             .with(jwt()))
                     .andExpect(status().isOk())
                     .andReturn();
+
             var body = result.getResponse().getContentAsString();
 
-            assertThatJson(body).and(
-                    v -> v.node("name").isEqualTo(testStatus.getName()),
-                    v -> v.node("slug").isEqualTo(testStatus.getSlug())
-            );
+            var actualDto = objectMapper.readValue(body, TaskStatusDTO.class);
+            var expectedStatus = taskStatusRepository.findById(testStatus.getId()).orElseThrow();
+
+            assertThat(actualDto).isNotNull().satisfies(dto -> {
+                assertThat(dto.name()).isEqualTo(expectedStatus.getName());
+                assertThat(dto.slug()).isEqualTo(expectedStatus.getSlug());
+            });
         }
 
         @Test
@@ -108,7 +126,7 @@ class TaskStatusesControllerTest {
         @Test
         void create() throws Exception {
             TaskStatus data = Instancio.create(taskStatusGenerator.getModel());
-            TaskStatusCreateDTO dto = toCreateDTO(data);
+            TaskStatusCreateDTO dto = toCreateDto(data);
 
             mockMvc.perform(post(BASE_URL)
                             .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
@@ -127,7 +145,7 @@ class TaskStatusesControllerTest {
 
         @Test
         void createWithoutAuth() throws Exception {
-            var dto = toCreateDTO(testStatus);
+            var dto = toCreateDto(testStatus);
 
             mockMvc.perform(post(BASE_URL)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -152,7 +170,7 @@ class TaskStatusesControllerTest {
     class UpdateTaskStatus {
         @Test
         void update() throws Exception {
-            var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+            var dto = Instancio.of(taskStatusGenerator.getUpdateDto())
                     .set(
                             Select.field(TaskStatusUpdateDTO::name),
                             JsonNullable.of("New name")
@@ -176,7 +194,7 @@ class TaskStatusesControllerTest {
 
         @Test
         void updateWithInvalidData() throws Exception {
-            var dto = Instancio.of(taskStatusGenerator.getUpdateDTO())
+            var dto = Instancio.of(taskStatusGenerator.getUpdateDto())
                     .set(
                             Select.field(TaskStatusUpdateDTO::name),
                             JsonNullable.of("")
@@ -217,7 +235,7 @@ class TaskStatusesControllerTest {
     }
 
 
-    private TaskStatusCreateDTO toCreateDTO(TaskStatus data) {
+    private TaskStatusCreateDTO toCreateDto(TaskStatus data) {
         return new TaskStatusCreateDTO(
                 data.getName(),
                 data.getSlug()

@@ -1,8 +1,11 @@
 package hexlet.code.controller.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.user.UserCreateDTO;
+import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
+import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.User;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
@@ -24,7 +27,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +40,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Transactional
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -69,6 +72,9 @@ class UsersControllerTest {
     @Autowired
     private TaskGenerator taskGenerator;
 
+    @Autowired
+    private UserMapper userMapper;
+
     private User testUser;
 
     private static final String BASE_URL = "/api/users";
@@ -76,12 +82,17 @@ class UsersControllerTest {
 
     @BeforeEach
     void setUp() {
+        taskRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
+
         testUser = Instancio.create(userGenerator.getModel());
         userRepository.save(testUser);
     }
 
     @Nested
     class GetUsers {
+
         @Test
         void index() throws Exception {
             long expectedCount = userRepository.count();
@@ -93,7 +104,12 @@ class UsersControllerTest {
                     .andReturn();
             var body = result.getResponse().getContentAsString();
 
-            assertThatJson(body).isArray();
+            List<UserDTO> actualDtos = objectMapper.readValue(body, new TypeReference<>() { });
+            var expectedDtos = userRepository.findAll().stream()
+                    .map(userMapper::map)
+                    .toList();
+
+            assertThat(actualDtos).containsExactlyInAnyOrderElementsOf(expectedDtos);
         }
 
         @Test
@@ -104,11 +120,17 @@ class UsersControllerTest {
                     .andReturn();
 
             var body = result.getResponse().getContentAsString();
-            assertThatJson(body).and(
-                    v -> v.node("email").isEqualTo(testUser.getEmail()),
-                    v -> v.node("firstName").isEqualTo(testUser.getFirstName()),
-                    v -> v.node("password").isAbsent()
-            );
+
+            var actualUserDto = objectMapper.readValue(body, UserDTO.class);
+            var expectedUser = userRepository.findById(testUser.getId()).orElseThrow();
+
+            assertThat(actualUserDto).isNotNull().satisfies(dto -> {
+                assertThat(dto.email()).isEqualTo(expectedUser.getEmail());
+                assertThat(dto.firstName()).isEqualTo(expectedUser.getFirstName());
+                assertThat(dto.lastName()).isEqualTo(expectedUser.getLastName());
+
+                assertThatJson(body).node("password").isAbsent();
+            });
         }
 
         @Test
@@ -124,7 +146,7 @@ class UsersControllerTest {
         @Test
         void create() throws Exception {
             User data = Instancio.create(userGenerator.getModel());
-            UserCreateDTO dto = toCreateDTO(data);
+            var dto = toCreateDto(data);
 
             mockMvc.perform(post(BASE_URL)
                             .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
@@ -143,7 +165,7 @@ class UsersControllerTest {
 
         @Test
         void createWithoutAuth() throws Exception {
-            var data = Instancio.create(userGenerator.getCreateDTO());
+            var data = Instancio.create(userGenerator.getCreateDto());
 
             mockMvc.perform(post(BASE_URL)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -153,7 +175,7 @@ class UsersControllerTest {
 
         @Test
         void createWithInvalidData() throws Exception {
-            var dto = Instancio.of(userGenerator.getCreateDTO())
+            var dto = Instancio.of(userGenerator.getCreateDto())
                     .set(Select.field(UserCreateDTO::password), "12")
                     .create();
 
@@ -169,7 +191,7 @@ class UsersControllerTest {
     class UpdateUser {
         @Test
         void update() throws Exception {
-            var dto = Instancio.of(userGenerator.getUpdateDTO())
+            var dto = Instancio.of(userGenerator.getUpdateDto())
                     .set(
                             Select.field(UserUpdateDTO::firstName),
                             JsonNullable.of("New name")
@@ -182,7 +204,7 @@ class UsersControllerTest {
                             .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isOk());
 
-            User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
+            var updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
 
             assertThat(updatedUser).isNotNull().satisfies(user -> {
                 assertThat(user.getFirstName()).isEqualTo("New name");
@@ -192,7 +214,7 @@ class UsersControllerTest {
 
         @Test
         void updateByAdmin() throws Exception {
-            var dto = Instancio.of(userGenerator.getUpdateDTO())
+            var dto = Instancio.of(userGenerator.getUpdateDto())
                     .set(Select.field(UserUpdateDTO::firstName), JsonNullable.of("New name"))
                     .create();
 
@@ -214,7 +236,7 @@ class UsersControllerTest {
             User otherUser = Instancio.create(userGenerator.getModel());
             userRepository.save(otherUser);
 
-            var dto = Instancio.of(userGenerator.getUpdateDTO())
+            var dto = Instancio.of(userGenerator.getUpdateDto())
                     .set(
                             Select.field(UserUpdateDTO::firstName),
                             JsonNullable.of("New name")
@@ -230,7 +252,7 @@ class UsersControllerTest {
 
         @Test
         void updateWithInvalidEmail() throws Exception {
-            var dto = Instancio.of(userGenerator.getUpdateDTO())
+            var dto = Instancio.of(userGenerator.getUpdateDto())
                     .set(
                             Select.field(UserUpdateDTO::email),
                             JsonNullable.of("Invalid email")
@@ -290,7 +312,7 @@ class UsersControllerTest {
     }
 
 
-    private UserCreateDTO toCreateDTO(User data) {
+    private UserCreateDTO toCreateDto(User data) {
         return new UserCreateDTO(
                 data.getFirstName(),
                 data.getLastName(),
