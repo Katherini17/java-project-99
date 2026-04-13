@@ -58,7 +58,7 @@ public class LabelsController {
     })
     @GetMapping(path = "/{id}")
     public LabelDTO show(@PathVariable Long id) {
-        return labelService.findById(id);
+        return labelService.getById(id);
     }
 
     @Operation(summary = "Create a new label")

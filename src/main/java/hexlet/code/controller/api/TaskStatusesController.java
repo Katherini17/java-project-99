@@ -56,7 +56,7 @@ public class TaskStatusesController {
     })
     @GetMapping("/{id}")
     public TaskStatusDTO show(@PathVariable Long id) {
-        return taskStatusService.findById(id);
+        return taskStatusService.getById(id);
     }
 
     @Operation(summary = "Create a new task status")

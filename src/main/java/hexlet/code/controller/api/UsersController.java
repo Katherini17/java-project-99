@@ -75,7 +75,7 @@ public class UsersController {
     })
     @GetMapping(path = "/{id}")
     public UserDTO show(@PathVariable Long id) {
-        return userService.findById(id);
+        return userService.getById(id);
     }
 
     @Operation(summary = "Create a new user")

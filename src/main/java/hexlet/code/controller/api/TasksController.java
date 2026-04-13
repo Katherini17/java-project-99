@@ -76,7 +76,7 @@ public class TasksController {
     })
     @GetMapping(path = "/{id}")
     public TaskDTO show(@PathVariable Long id) {
-        return taskService.findById(id);
+        return taskService.getById(id);
     }
 
     @Operation(summary = "Create a new task")
