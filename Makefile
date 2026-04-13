@@ -4,6 +4,9 @@ install:
 run:
 	@./gradlew bootRun
 
+run-dist:
+	@./build/install/app/bin/app
+
 build:
 	@./gradlew clean build
 
@@ -22,4 +25,4 @@ clean:
 check-updates:
 	@./gradlew dependencyUpdates
 
-.PHONY: build test clean run lint check-updates test-report install
+.PHONY: build test clean run run-dist lint check-updates test-report install
