@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TaskStatusGenerator {
 
     private Model<TaskStatus> model;
-    private Model<TaskStatusCreateDTO> createDTO;
-    private Model<TaskStatusUpdateDTO> updateDTO;
+    private Model<TaskStatusCreateDTO> createDto;
+    private Model<TaskStatusUpdateDTO> updateDto;
 
     private final Faker faker;
 
@@ -30,9 +30,9 @@ public class TaskStatusGenerator {
 
     @PostConstruct
     public void init() {
-        model = buildModel();
-        createDTO = buildCreateDTO();
-        updateDTO = ModelUtils.buildUpdateModel(TaskStatusUpdateDTO.class);
+        this.model = buildModel();
+        this.createDto = buildCreateDto();
+        this.updateDto = ModelUtils.buildUpdateModel(TaskStatusUpdateDTO.class);
 
     }
 
@@ -48,7 +48,7 @@ public class TaskStatusGenerator {
                 .toModel();
     }
 
-    private Model<TaskStatusCreateDTO> buildCreateDTO() {
+    private Model<TaskStatusCreateDTO> buildCreateDto() {
         return Instancio.of(TaskStatusCreateDTO.class)
                 .supply(Select.field(TaskStatusCreateDTO::name), () -> faker.lorem().word())
                 .supply(Select.field(TaskStatusCreateDTO::slug), () -> faker.internet().slug())

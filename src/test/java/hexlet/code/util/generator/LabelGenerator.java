@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class LabelGenerator {
 
     private Model<Label> model;
-    private Model<LabelCreateDTO> createDTO;
-    private Model<LabelUpdateDTO> updateDTO;
+    private Model<LabelCreateDTO> createDto;
+    private Model<LabelUpdateDTO> updateDto;
 
     private final Faker faker;
 
@@ -30,9 +30,9 @@ public class LabelGenerator {
 
     @PostConstruct
     public void init() {
-        model = buildModel();
-        createDTO = buildCreateDTO();
-        updateDTO = ModelUtils.buildUpdateModel(LabelUpdateDTO.class);
+        this.model = buildModel();
+        this.createDto = buildCreateDto();
+        this.updateDto = ModelUtils.buildUpdateModel(LabelUpdateDTO.class);
 
     }
 
@@ -48,7 +48,7 @@ public class LabelGenerator {
                 .toModel();
     }
 
-    private Model<LabelCreateDTO> buildCreateDTO() {
+    private Model<LabelCreateDTO> buildCreateDto() {
         return Instancio.of(LabelCreateDTO.class)
                 .supply(
                         Select.field(Label::getName),

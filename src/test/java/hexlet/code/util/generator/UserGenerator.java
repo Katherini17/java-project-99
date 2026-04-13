@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class UserGenerator {
 
     private Model<User> model;
-    private Model<UserCreateDTO> createDTO;
-    private Model<UserUpdateDTO> updateDTO;
+    private Model<UserCreateDTO> createDto;
+    private Model<UserUpdateDTO> updateDto;
 
 
     private final Faker faker;
@@ -31,8 +31,8 @@ public class UserGenerator {
     @PostConstruct
     public void init() {
         this.model = buildModel();
-        this.createDTO = buildCreateDTO();
-        this.updateDTO = ModelUtils.buildUpdateModel(UserUpdateDTO.class);
+        this.createDto = buildCreateDto();
+        this.updateDto = ModelUtils.buildUpdateModel(UserUpdateDTO.class);
     }
 
     private Model<User> buildModel() {
@@ -50,7 +50,7 @@ public class UserGenerator {
                 .toModel();
     }
 
-    private Model<UserCreateDTO> buildCreateDTO() {
+    private Model<UserCreateDTO> buildCreateDto() {
         return Instancio.of(UserCreateDTO.class)
                 .supply(Select.field(UserCreateDTO::firstName), () -> faker.name().firstName())
                 .supply(Select.field(UserCreateDTO::lastName), () -> faker.name().lastName())

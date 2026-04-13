@@ -21,16 +21,16 @@ import java.util.HashSet;
 public class TaskGenerator {
 
     private Model<Task> model;
-    private Model<TaskCreateDTO> createDTO;
-    private Model<TaskUpdateDTO> updateDTO;
+    private Model<TaskCreateDTO> createDto;
+    private Model<TaskUpdateDTO> updateDto;
 
     private final Faker faker;
 
     @PostConstruct
     public void init() {
         model = buildModel();
-        createDTO = buildCreateDTO();
-        updateDTO = ModelUtils.buildUpdateModel(TaskUpdateDTO.class);
+        createDto = buildCreateDto();
+        updateDto = ModelUtils.buildUpdateModel(TaskUpdateDTO.class);
 
     }
 
@@ -48,7 +48,7 @@ public class TaskGenerator {
                 .toModel();
     }
 
-    private Model<TaskCreateDTO> buildCreateDTO() {
+    private Model<TaskCreateDTO> buildCreateDto() {
         return Instancio.of(TaskCreateDTO.class)
                 .supply(Select.field(TaskCreateDTO::title), () -> faker.lorem().sentence(3))
                 .supply(Select.field(TaskCreateDTO::content), () -> faker.lorem().paragraph())
