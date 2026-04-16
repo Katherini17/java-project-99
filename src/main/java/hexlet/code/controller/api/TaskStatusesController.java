@@ -33,7 +33,6 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequiredArgsConstructor
 @RequestMapping("/api/task_statuses")
 @Validated
-@PreAuthorize("isAuthenticated()")
 @Tag(name = "Statuses", description = "Dictionary of task statuses")
 @ApiResponses(value = {
         @ApiResponse(responseCode = "401", description = "Unauthorized")

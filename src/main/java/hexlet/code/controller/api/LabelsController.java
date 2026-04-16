@@ -14,7 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +33,6 @@ import static hexlet.code.util.PageUtils.buildPagingResponse;
 @RequiredArgsConstructor
 @RequestMapping("/api/labels")
 @Validated
-@PreAuthorize("isAuthenticated()")
 @Tag(name = "Labels", description = "Dictionary of labels for grouping tasks")
 @ApiResponses(value = {
         @ApiResponse(responseCode = "401", description = "Unauthorized")
