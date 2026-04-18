@@ -4,9 +4,9 @@ import hexlet.code.dto.taskstatus.TaskStatusCreateDTO;
 import hexlet.code.dto.taskstatus.TaskStatusDTO;
 import hexlet.code.dto.taskstatus.TaskStatusUpdateDTO;
 import hexlet.code.exception.ResourceNotFoundException;
-import hexlet.code.exception.UnprocessableEntityException;
 import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.model.TaskStatus;
+import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.service.TaskStatusService;
@@ -22,14 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TaskStatusServiceImpl implements TaskStatusService {
+    private final LabelRepository labelRepository;
 
     private final TaskStatusRepository taskStatusRepository;
     private final TaskRepository taskRepository;
     private final TaskStatusMapper taskStatusMapper;
 
     private static final String TASK_STATUS_NOT_FOUND_MESSAGE = "Task status with id %d not found";
-    private static final String TASK_STATUS_LINKED_MESSAGE =
-            "Cannot delete this status: it is assigned to one or more tasks";
 
     public Page<TaskStatusDTO> getAll(Pageable pageable) {
         return taskStatusRepository.findAll(pageable)
@@ -61,17 +60,9 @@ public class TaskStatusServiceImpl implements TaskStatusService {
         return taskStatusMapper.map(taskStatusRepository.save(taskStatus));
     }
 
-    /**
-     * Deletes task status if it is not assigned to any tasks.
-     * @throws UnprocessableEntityException if status is in use.
-     */
     @Transactional
     public void delete(Long id) {
         var taskStatus = getStatusForUpdate(id);
-
-        if (taskRepository.existsByTaskStatusId(id)) {
-            throw new UnprocessableEntityException(TASK_STATUS_LINKED_MESSAGE);
-        }
 
         taskStatusRepository.delete(taskStatus);
         log.info("Task status with id {} deleted", id);

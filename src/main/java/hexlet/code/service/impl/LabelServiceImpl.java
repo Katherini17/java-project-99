@@ -4,7 +4,6 @@ import hexlet.code.dto.label.LabelCreateDTO;
 import hexlet.code.dto.label.LabelDTO;
 import hexlet.code.dto.label.LabelUpdateDTO;
 import hexlet.code.exception.ResourceNotFoundException;
-import hexlet.code.exception.UnprocessableEntityException;
 import hexlet.code.mapper.LabelMapper;
 import hexlet.code.model.Label;
 import hexlet.code.repository.LabelRepository;
@@ -28,8 +27,6 @@ public class LabelServiceImpl implements LabelService {
     private final TaskRepository taskRepository;
 
     private static final String LABEL_NOT_FOUND_MESSAGE = "Label with id %d not found";
-    private static final String LABEL_LINKED_MESSAGE =
-            "Label cannot be deleted because it is currently used by tasks";
 
     public Page<LabelDTO> getAll(Pageable pageable) {
         return labelRepository.findAll(pageable)
@@ -60,18 +57,9 @@ public class LabelServiceImpl implements LabelService {
         return labelMapper.map(labelRepository.save(label));
     }
 
-    /**
-     * Deletes label if it is not linked to any tasks.
-     * @throws UnprocessableEntityException if label is in use.
-     */
     @Transactional
     public void delete(Long id) {
         var label = getLabelForUpdate(id);
-
-        if (taskRepository.existsByLabelsId(id)) {
-            log.warn("Failed to delete label with id {}: linked to tasks", id);
-            throw new UnprocessableEntityException(LABEL_LINKED_MESSAGE);
-        }
 
         labelRepository.delete(label);
         log.info("Label with id {} deleted", id);

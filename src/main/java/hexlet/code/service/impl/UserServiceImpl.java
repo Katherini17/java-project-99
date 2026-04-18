@@ -4,7 +4,6 @@ import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
 import hexlet.code.exception.ResourceNotFoundException;
-import hexlet.code.exception.UnprocessableEntityException;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.Role;
 import hexlet.code.model.User;
@@ -34,8 +33,6 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     private static final String USER_NOT_FOUND_MESSAGE = "User with id %d not found";
-    private static final String USER_LINKED_MESSAGE =
-            "User cannot be deleted while they are assigned to active tasks";
 
     public Page<UserDTO> getAll(Pageable pageable) {
         return userRepository.findAll(pageable)
@@ -78,17 +75,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.map(userRepository.save(user));
     }
 
-    /**
-     * Deletes user if they are not assigned to any tasks.
-     * @throws UnprocessableEntityException if user has active tasks.
-     */
     @Transactional
     public void delete(Long id) {
         var user = getUserForUpdate(id);
-
-        if (taskRepository.existsByAssigneeId(id)) {
-            throw new UnprocessableEntityException(USER_LINKED_MESSAGE);
-        }
 
         userRepository.delete(user);
         log.info("User with id {} deleted", id);
